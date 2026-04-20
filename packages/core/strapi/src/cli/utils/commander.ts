@@ -3,7 +3,7 @@
  */
 
 import { Command, InvalidOptionArgumentError, Option } from 'commander';
-import chalk from 'chalk';
+import { styleText } from 'node:util';
 import { isNaN } from 'lodash/fp';
 import { exitWith } from './helpers';
 import { getInquirer } from './get-inquirer';
@@ -122,7 +122,9 @@ const confirmMessage = async (message: string, { force }: { force?: boolean } = 
   // if we have a force option, respond yes
   if (force === true) {
     // attempt to mimic the inquirer prompt exactly
-    console.log(`${chalk.green('?')} ${chalk.bold(message)} ${chalk.cyan('Yes')}`);
+    console.log(
+      `${styleText('green', '?')} ${styleText('bold', message)} ${styleText('cyan', 'Yes')}`
+    );
     return true;
   }
 

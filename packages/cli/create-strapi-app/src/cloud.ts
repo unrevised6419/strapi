@@ -1,5 +1,5 @@
 import { cli as cloudCli, services as cloudServices } from '@strapi/cloud-cli';
-import parseToChalk from './utils/parse-to-chalk';
+import applyStyleText from './utils/apply-style-text';
 
 interface CloudError {
   response: {
@@ -33,7 +33,7 @@ export async function handleCloudLogin(): Promise<boolean> {
       return false;
     }
 
-    logger.log(parseToChalk(config.projectCreation.introText));
+    logger.log(applyStyleText(config.projectCreation.introText));
   } catch (e: unknown) {
     logger.debug(e);
     logger.error(defaultErrorMessage);

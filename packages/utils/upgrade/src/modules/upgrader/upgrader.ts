@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import { styleText } from 'node:util';
 import semver from 'semver';
 import { packageManager } from '@strapi/utils';
 
@@ -267,7 +267,7 @@ export class Upgrader implements UpgraderInterface {
     const updatedPackageJSON = json.root();
 
     if (this.isDry) {
-      this.logger?.debug?.(`Skipping dependencies update (${chalk.italic('dry mode')})`);
+      this.logger?.debug?.(`Skipping dependencies update (${styleText('italic', 'dry mode')})`);
       return;
     }
 
@@ -300,7 +300,9 @@ export class Upgrader implements UpgraderInterface {
     this.logger?.debug?.(`Using ${f.highlight(packageManagerName)} as package manager`);
 
     if (this.isDry) {
-      this.logger?.debug?.(`Skipping dependencies installation (${chalk.italic('dry mode')})`);
+      this.logger?.debug?.(
+        `Skipping dependencies installation (${styleText('italic', 'dry mode')})`
+      );
       return;
     }
 

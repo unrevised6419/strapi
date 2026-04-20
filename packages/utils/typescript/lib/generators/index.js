@@ -1,7 +1,7 @@
 'use strict';
 
 const path = require('path');
-const chalk = require('chalk');
+const { styleText } = require('node:util');
 
 const { TYPES_ROOT_DIR, GENERATED_OUT_DIR } = require('./constants');
 const { saveDefinitionToFileSystem, createLogger, timer } = require('./utils');
@@ -46,10 +46,13 @@ const generate = async (config = {}) => {
   const generatorConfig = { strapi, pwd: registryPwd, logger };
 
   const returnWithMessage = () => {
-    const nbWarnings = chalk.yellow(`${logger.warnings} warning(s)`);
-    const nbErrors = chalk.red(`${logger.errors} error(s)`);
+    const nbWarnings = styleText('yellow', `${logger.warnings} warning(s)`);
+    const nbErrors = styleText('red', `${logger.errors} error(s)`);
 
-    const status = logger.errors > 0 ? chalk.red('errored') : chalk.green('completed successfully');
+    const status =
+      logger.errors > 0
+        ? styleText('red', 'errored')
+        : styleText('green', 'completed successfully');
 
     psTimer.end();
 
@@ -64,7 +67,7 @@ const generate = async (config = {}) => {
   logger.debug(`Enabled artifacts: ${enabledArtifacts.join(', ')}`);
 
   for (const artifact of enabledArtifacts) {
-    const boldArtifact = chalk.bold(artifact); // used for log messages
+    const boldArtifact = styleText('bold', artifact); // used for log messages
 
     logger.info(`Generating types for ${boldArtifact}`);
 
@@ -91,7 +94,7 @@ const generate = async (config = {}) => {
   }
 
   for (const artifact of Object.keys(reports)) {
-    const boldArtifact = chalk.bold(artifact); // used for log messages
+    const boldArtifact = styleText('bold', artifact); // used for log messages
 
     const artifactFsTimer = timer().start();
 
@@ -104,7 +107,7 @@ const generate = async (config = {}) => {
 
       artifactFsTimer.end();
 
-      logger.info(`Saved ${boldArtifact} types in ${chalk.bold(relativeOutPath)}`);
+      logger.info(`Saved ${boldArtifact} types in ${styleText('bold', relativeOutPath)}`);
       logger.debug(`Saved ${boldArtifact} in ${artifactFsTimer.duration}s`);
     } catch (e) {
       logger.error(

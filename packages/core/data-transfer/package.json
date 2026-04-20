@@ -54,7 +54,6 @@
     "@strapi/logger": "5.42.1",
     "@strapi/types": "5.42.1",
     "@strapi/utils": "5.42.1",
-    "chalk": "4.1.2",
     "cli-table3": "0.6.5",
     "commander": "8.3.0",
     "fs-extra": "11.2.0",
@@ -87,7 +86,7 @@
     "typescript": "5.4.4"
   },
   "engines": {
-    "node": ">=20.0.0 <=24.x.x",
+    "node": ">=20.18.0 <=24.x.x",
     "npm": ">=6.0.0"
   }
 }

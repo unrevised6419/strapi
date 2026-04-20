@@ -1,11 +1,12 @@
 import { Logger, loggerFactory } from '../logger';
 
-jest.mock('chalk', () => ({
-  cyan: jest.fn((text) => text),
-  red: jest.fn((text) => text),
-  blue: jest.fn((text) => text),
-  yellow: jest.fn((text) => text),
-}));
+jest.mock('node:util', () => {
+  const actual = jest.requireActual('node:util');
+  return {
+    ...actual,
+    styleText: jest.fn((_format, text) => text),
+  };
+});
 
 describe('Logger', () => {
   const mockDate = new Date('2023-01-01');

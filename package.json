@@ -126,7 +126,6 @@
     "@types/react-dom": "18.3.0",
     "@typescript-eslint/eslint-plugin": "6.7.3",
     "@typescript-eslint/parser": "6.7.3",
-    "chalk": "4.1.2",
     "chokidar": "3.6.0",
     "coffee": "5.5.1",
     "commander": "8.3.0",
@@ -187,7 +186,7 @@
   },
   "packageManager": "yarn@4.12.0",
   "engines": {
-    "node": ">=20.0.0 <=24.x.x",
+    "node": ">=20.18.0 <=24.x.x",
     "npm": ">=6.0.0"
   },
   "isStrapiMonorepo": true

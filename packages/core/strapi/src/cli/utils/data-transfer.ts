@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import { styleText } from 'node:util';
 import Table from 'cli-table3';
 import { Command, Option } from 'commander';
 import { configs, createLogger, type winston, formats } from '@strapi/logger';
@@ -19,12 +19,13 @@ const exitMessageText = (process: string, error = false) => {
   const processCapitalized = process[0].toUpperCase() + process.slice(1);
 
   if (!error) {
-    return chalk.bold(
-      chalk.green(`${processCapitalized} process has been completed successfully!`)
+    return styleText(
+      ['bold', 'green'],
+      `${processCapitalized} process has been completed successfully!`
     );
   }
 
-  return chalk.bold(chalk.red(`${processCapitalized} process failed.`));
+  return styleText(['bold', 'red'], `${processCapitalized} process failed.`);
 };
 
 const pad = (n: number) => {
@@ -60,7 +61,7 @@ const buildTransferTable = (resultData: ResultData) => {
 
   // Build pretty table
   const table = new Table({
-    head: ['Type', 'Count', 'Size'].map((text) => chalk.bold.blue(text)),
+    head: ['Type', 'Count', 'Size'].map((text) => styleText(['bold', 'blue'], text)),
   });
 
   let totalBytes = 0;
@@ -73,7 +74,7 @@ const buildTransferTable = (resultData: ResultData) => {
     }
 
     table.push([
-      { hAlign: 'left', content: chalk.bold(stage) },
+      { hAlign: 'left', content: styleText('bold', stage) },
       { hAlign: 'right', content: item.count },
       { hAlign: 'right', content: `${readableBytes(item.bytes, 1, 11)} ` },
     ]);
@@ -91,17 +92,23 @@ const buildTransferTable = (resultData: ResultData) => {
           const subitem = item.aggregates[subkey];
 
           table.push([
-            { hAlign: 'left', content: `-- ${chalk.bold.grey(subkey)}` },
-            { hAlign: 'right', content: chalk.grey(subitem.count) },
-            { hAlign: 'right', content: chalk.grey(`(${readableBytes(subitem.bytes, 1, 11)})`) },
+            { hAlign: 'left', content: `-- ${styleText(['bold', 'grey'], String(subkey))}` },
+            { hAlign: 'right', content: styleText('grey', String(subitem.count)) },
+            {
+              hAlign: 'right',
+              content: styleText('grey', `(${readableBytes(subitem.bytes, 1, 11)})`),
+            },
           ]);
         });
     }
   });
   table.push([
-    { hAlign: 'left', content: chalk.bold.green('Total') },
-    { hAlign: 'right', content: chalk.bold.green(totalItems) },
-    { hAlign: 'right', content: `${chalk.bold.green(readableBytes(totalBytes, 1, 11))} ` },
+    { hAlign: 'left', content: styleText(['bold', 'green'], 'Total') },
+    { hAlign: 'right', content: styleText(['bold', 'green'], String(totalItems)) },
+    {
+      hAlign: 'right',
+      content: `${styleText(['bold', 'green'], readableBytes(totalBytes, 1, 11))} `,
+    },
   ]);
 
   return table;
@@ -202,9 +209,9 @@ const validateExcludeOnly = (command: Command) => {
 };
 
 const errorColors = {
-  fatal: chalk.red,
-  error: chalk.red,
-  silly: chalk.yellow,
+  fatal: (text: string) => styleText('red', text),
+  error: (text: string) => styleText('red', text),
+  silly: (text: string) => styleText('yellow', text),
 } as const;
 
 const formatDiagnostic = (
@@ -361,24 +368,33 @@ const getDiffHandler = (
         }
         // handle generic cases
         else if (diff.kind === 'added') {
-          engine.reportWarning(chalk.red(`${chalk.bold(path)} does not exist on source`), source);
+          engine.reportWarning(
+            styleText('red', `${styleText('bold', path)} does not exist on source`),
+            source
+          );
         } else if (diff.kind === 'deleted') {
           engine.reportWarning(
-            chalk.red(`${chalk.bold(path)} does not exist on destination`),
+            styleText('red', `${styleText('bold', path)} does not exist on destination`),
             source
           );
         } else if (diff.kind === 'modified') {
-          engine.reportWarning(chalk.red(`${chalk.bold(path)} has a different data type`), source);
+          engine.reportWarning(
+            styleText('red', `${styleText('bold', path)} has a different data type`),
+            source
+          );
         }
       }
     });
 
     // output the known feature warnings
     if (workflowsStatus === 'added') {
-      engine.reportWarning(chalk.red(`Review workflows feature does not exist on source`), source);
+      engine.reportWarning(
+        styleText('red', `Review workflows feature does not exist on source`),
+        source
+      );
     } else if (workflowsStatus === 'deleted') {
       engine.reportWarning(
-        chalk.red(`Review workflows feature does not exist on destination`),
+        styleText('red', `Review workflows feature does not exist on destination`),
         source
       );
     } else if (workflowsStatus === 'modified') {

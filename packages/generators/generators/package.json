@@ -52,7 +52,6 @@
     "@sindresorhus/slugify": "1.1.0",
     "@strapi/typescript-utils": "5.42.1",
     "@strapi/utils": "5.42.1",
-    "chalk": "4.1.2",
     "fs-extra": "11.2.0",
     "handlebars": "4.7.9",
     "jscodeshift": "17.3.0",
@@ -69,7 +68,7 @@
     "tsconfig": "5.42.1"
   },
   "engines": {
-    "node": ">=20.0.0 <=24.x.x",
+    "node": ">=20.18.0 <=24.x.x",
     "npm": ">=6.0.0"
   }
 }
