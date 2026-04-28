@@ -103,7 +103,6 @@ const resolveBaseConfig = async (ctx: BuildContext): Promise<InlineConfig> => {
               'react-colorful',
               'react-dnd-html5-backend',
               'react-window',
-              'sanitize-html',
               'semver',
               'semver/functions/lt',
               'semver/functions/valid',
