@@ -10,6 +10,6 @@ declare module 'styled-components' {
 
 declare global {
   interface Window {
-    strapi: BrowserStrapi;
+    strapi?: BrowserStrapi;
   }
 }

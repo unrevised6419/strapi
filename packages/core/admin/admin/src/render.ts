@@ -69,7 +69,7 @@ const renderAdmin = async (
 
   const { get } = getFetchClient();
 
-  interface ProjectType extends Pick<Window['strapi'], 'flags'> {
+  interface ProjectType extends Pick<BrowserStrapi, 'flags'> {
     isEE: boolean;
     isTrial: boolean;
     features: {
@@ -107,6 +107,8 @@ const renderAdmin = async (
     console.error(err);
   }
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore - conflicting node Strapi with window BrowserStrapi
   window.strapi = browserStrapi;
 
   const app = new StrapiApp({

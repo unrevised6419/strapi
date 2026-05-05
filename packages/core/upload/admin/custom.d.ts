@@ -1,13 +1,8 @@
-export {};
+import type { BrowserStrapi } from '@strapi/admin/strapi-admin';
 
 declare global {
   interface Window {
-    strapi: {
-      backendURL: string;
-      future: {
-        isEnabled: (name: keyof NonNullable<Modules.Features.FeaturesConfig['future']>) => boolean;
-      };
-    };
+    strapi: BrowserStrapi;
   }
   declare module '*?raw';
 }

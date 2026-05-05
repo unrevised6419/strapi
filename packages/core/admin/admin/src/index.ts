@@ -104,6 +104,7 @@ export * from './utils/rulesEngine';
 export * from './utils/users';
 export * from './services/api';
 export type { CMAdminConfiguration } from './types/adminConfiguration';
+export type { BrowserStrapi } from './types/browserStrapi';
 
 /**
  * Components

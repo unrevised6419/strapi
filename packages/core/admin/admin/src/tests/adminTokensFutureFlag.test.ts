@@ -1,14 +1,19 @@
 import { SETTINGS_LINKS_CE } from '../constants';
 import { ROUTES_CE } from '../pages/Settings/constants';
 
-declare global {
-  interface Window {
-    strapi: any;
-  }
-}
+import type { BrowserStrapi } from '../types/browserStrapi';
 
 const setWindowStrapi = (adminTokensEnabled: boolean) => {
-  window.strapi = {
+  const browserStrapi: BrowserStrapi = {
+    isTrial: false,
+    isTrialLicense: false,
+    backendURL: '',
+    isEE: false,
+    telemetryDisabled: false,
+    projectType: 'Community',
+    ai: {
+      enabled: false,
+    },
     future: {
       isEnabled: jest.fn((featureName: string) => {
         return featureName === 'adminTokens' ? adminTokensEnabled : false;
@@ -18,15 +23,21 @@ const setWindowStrapi = (adminTokensEnabled: boolean) => {
       SSO: 'sso',
       AUDIT_LOGS: 'audit-logs',
       isEnabled: jest.fn(() => false),
+      REVIEW_WORKFLOWS: 'review-workflows',
     },
     flags: {
       promoteEE: false,
     },
   };
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore - conflicting node Strapi with window BrowserStrapi
+  window.strapi = browserStrapi;
 };
 
 describe('adminTokens future flag', () => {
   afterEach(() => {
+    // @ts-expect-error - window.strapi is not optional
     delete window.strapi;
   });
 
