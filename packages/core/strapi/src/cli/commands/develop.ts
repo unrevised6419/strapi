@@ -39,6 +39,11 @@ const command: StrapiCommand = ({ ctx }) => {
     .option('--open', 'Open the admin in your browser', true)
     .option('--install-deps', 'Auto-install missing admin dependencies', true)
     .option('--no-install-deps', 'Do not auto-install missing admin dependencies')
+    .option(
+      '--experimental-vite-server',
+      'Run the backend through the Vite server environment (experimental)',
+      process.env.STRAPI_EXPERIMENTAL_VITE_SERVER === 'true'
+    )
     .description('Start your Strapi application in development mode')
     .action(async (options: DevelopCLIOptions) => {
       return action({ ...options, ...ctx });
