@@ -9,9 +9,10 @@ describe('strapi() vite plugin', () => {
     const clientCfg = (plugin.configEnvironment as any)('client', {});
     expect(clientCfg).toBeDefined();
     expect(clientCfg.resolve?.dedupe).toContain('react');
+    expect(clientCfg.resolve?.dedupe).toContain('@strapi/design-system');
   });
 
-  it('returns undefined for unknown environments (for now)', () => {
+  it('returns undefined for non-client environments', () => {
     const plugin = strapi({ ctx: fakeCtx });
     expect((plugin.configEnvironment as any)('server', {})).toBeUndefined();
   });

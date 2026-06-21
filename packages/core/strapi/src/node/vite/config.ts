@@ -141,23 +141,6 @@ const resolveBaseConfig = async (ctx: BuildContext): Promise<InlineConfig> => {
               : []),
           ],
         },
-        resolve: {
-          // https://react.dev/warnings/invalid-hook-call-warning#duplicate-react
-          // Include design-system so plugin chunks use the same instance and inherit root context.
-          // Note: strapi() plugin also contributes a dedupe subset via configEnvironment('client');
-          // listing the full set here ensures all entries are active regardless of plugin merge order.
-          dedupe: [
-            'react',
-            'react-dom',
-            'react-router-dom',
-            'styled-components',
-            'react-redux',
-            '@reduxjs/toolkit',
-            '@strapi/design-system',
-            '@radix-ui/react-tooltip',
-            'lodash',
-          ],
-        },
       },
     },
   };

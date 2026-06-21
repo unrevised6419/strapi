@@ -7,14 +7,24 @@ export interface StrapiPluginOptions {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function strapi(_opts: StrapiPluginOptions): Plugin {
+export function strapi({ ctx: _ctx }: StrapiPluginOptions): Plugin {
   return {
     name: 'strapi',
     configEnvironment(name) {
       if (name === 'client') {
         return {
           resolve: {
-            dedupe: ['react', 'react-dom', 'react-router-dom', 'styled-components'],
+            dedupe: [
+              'react',
+              'react-dom',
+              'react-router-dom',
+              'styled-components',
+              'react-redux',
+              '@reduxjs/toolkit',
+              '@strapi/design-system',
+              '@radix-ui/react-tooltip',
+              'lodash',
+            ],
           },
         };
       }
