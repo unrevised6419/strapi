@@ -169,7 +169,7 @@ const resolveProductionConfig = async (ctx: BuildContext): Promise<InlineConfig>
       assetsDir: '',
       minify,
       sourcemap: sourcemaps,
-      rollupOptions: {
+      rolldownOptions: {
         input: {
           strapi: ctx.entry,
         },
