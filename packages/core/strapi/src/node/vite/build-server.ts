@@ -52,9 +52,20 @@ const resolveProdEntry = (): string => require.resolve('../server-prod-entry');
 export function resolveServerBuildConfig(ctx: BuildContext): InlineConfig {
   const appDir = ctx.appDir ?? ctx.cwd;
   // The bundle lives inside the app dir (load-bearing: externals walk up to
-  // app/node_modules). `distPath` is `<dist.root>/build` for the admin; the
-  // server bundle sits one level up, directly in the app's dist root.
-  const outDir = path.dirname(ctx.distPath);
+  // app/node_modules). It is emitted to `<appDir>/dist/server.js`:
+  //
+  // - A dedicated `<appDir>/dist` subdir (NOT `appDir` itself) keeps the server
+  //   `outDir` separate from the Vite `root` (= `ctx.cwd` = appDir). Emitting to
+  //   `appDir` directly triggers Vite's "outDir must not be the root or a parent of
+  //   root" warning and risks clobbering app source / colliding with `publicDir`.
+  // - `<appDir>/dist/server.js` is exactly where `strapi start` (Task C4) probes for
+  //   the bundle, and is independent of the admin's `<dist.root>/build` output, so the
+  //   two environments never fight over a directory.
+  //
+  // It is intentionally NOT under `<appDir>/build` (the admin SPA dir, which the CLI
+  // wipes before each build) so the server bundle is not collateral of the admin
+  // clean. See `builder.ts` for the full dirs reconciliation.
+  const outDir = path.join(appDir, 'dist');
 
   return {
     root: ctx.cwd,

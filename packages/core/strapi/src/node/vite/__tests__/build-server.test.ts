@@ -6,9 +6,10 @@ import type { BuildContext } from '../../create-build-context';
 
 const ctx = {
   cwd: '/abs/app',
-  // create-build-context sets distPath = <dist.root>/build; the server bundle
-  // is emitted one level up, directly in the app's dist root.
-  distPath: '/abs/app/dist/build',
+  // create-build-context sets distPath = <dist.root>/build (the admin SPA). The
+  // server bundle is emitted to a dedicated <appDir>/dist subdir, independent of
+  // distPath, so it never collides with the Vite root or the admin build dir.
+  distPath: '/abs/app/build',
   appDir: '/abs/app',
 } as unknown as BuildContext;
 
@@ -23,8 +24,8 @@ describe('resolveServerBuildConfig', () => {
     expect(out.codeSplitting).toBe(false);
     expect(out.entryFileNames).toBe('server.js');
 
-    // bundle emitted into the app's dist root (inside the app dir) so externals
-    // resolve by walking up to app/node_modules.
+    // bundle emitted into <appDir>/dist (inside the app dir, separate from the
+    // Vite root) so externals resolve by walking up to app/node_modules.
     expect(cfg.build?.outDir).toBe('/abs/app/dist');
 
     const ext = cfg.build?.rollupOptions?.external as (id: string) => boolean;
