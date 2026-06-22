@@ -1,14 +1,22 @@
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
-import { createServer, isRunnableDevEnvironment, createRunnableDevEnvironment } from 'vite';
+import {
+  createServer,
+  isRunnableDevEnvironment,
+  createRunnableDevEnvironment,
+  mergeConfig,
+} from 'vite';
 
-import type { RunnableDevEnvironment } from 'vite';
+import type { RunnableDevEnvironment, InlineConfig } from 'vite';
 import type { ModuleRunner } from 'vite/module-runner';
 import type { Core } from '@strapi/types';
 
-import { strapi } from './plugin';
 import { strapiCjsInterop } from './cjs-interop';
+import { mergeConfigWithUserConfig, resolveDevelopmentConfig } from './config';
+import { mountViteAdmin, type ServeAdminContext } from './serve-admin';
+import { createBuildContext, type BuildContext } from '../create-build-context';
+import { writeStaticClientFiles } from '../staticFiles';
 import { createStrapiApp } from '../server-entry';
 import type { DevelopOptions } from '../develop';
 
@@ -41,6 +49,15 @@ type ViteServer = Awaited<ReturnType<typeof createServer>>;
  * - Strapi runs its own Koa HTTP server and listens on its own port, so the
  *   Vite server stays in `middlewareMode` purely as the runner host; no Vite
  *   middleware needs wiring into Koa for the backend to serve `/api`.
+ *
+ * - Task 6: the SAME single Vite server hosts both environments — the `server`
+ *   env (backend Module Runner, above) AND the `client` env (the admin SPA).
+ *   After boot we mount `vite.middlewares` + a `transformIndexHtml` SPA entry on
+ *   Strapi's Koa router under the admin path (see {@link mountViteAdmin}), so
+ *   `/admin` is served from the same server that serves `/api`. The admin client
+ *   config (React refresh, aliases, dep pre-bundling, HMR over Strapi's
+ *   httpServer) is the shared {@link resolveDevelopmentConfig} used by the
+ *   off-path `--watch-admin` flow, merged with the `server`-env runner wiring.
  */
 
 /**
@@ -62,18 +79,23 @@ export function getServerRunner(vite: ViteServer): ModuleRunner {
   return (env as RunnableDevEnvironment).runner;
 }
 
-export async function developViteServer(options: DevelopOptions): Promise<void> {
-  const { cwd, logger } = options;
+/**
+ * Augment the shared admin dev config ({@link resolveDevelopmentConfig}, also
+ * used by the off-path `--watch-admin` flow) with the `server`-environment
+ * Module Runner wiring and the CJS-interop plugin this dev path needs.
+ *
+ * The result is ONE Vite server config that drives both environments:
+ *  - `client` — the admin SPA (React refresh, aliases, dep pre-bundling, HMR
+ *    over Strapi's httpServer) — exactly as the off-path serves it, and
+ *  - `server` — a {@link RunnableDevEnvironment} hosting the backend in-process.
+ */
+const buildDevServerConfig = async (ctx: BuildContext): Promise<InlineConfig> => {
+  const clientConfig = await mergeConfigWithUserConfig(await resolveDevelopmentConfig(ctx), ctx);
 
-  const vite = await createServer({
-    root: cwd,
-    appType: 'custom',
-    server: { middlewareMode: true },
-    configFile: false,
-    // `ctx` is not consumed by the plugin's `configEnvironment` (the server/
-    // client branches are static), so we don't pay for a second Strapi instance
-    // just to satisfy the type. The real ctx is wired in the admin path.
-    plugins: [strapi({ ctx: undefined }), strapiCjsInterop()],
+  const serverEnvConfig: InlineConfig = {
+    // Append the CJS-interop plugin (it only applies to the `server`
+    // environment) without dropping the client plugins (react, strapi, …).
+    plugins: [strapiCjsInterop()],
     environments: {
       server: {
         resolve: { conditions: ['node', 'strapi-server'] },
@@ -84,9 +106,65 @@ export async function developViteServer(options: DevelopOptions): Promise<void> 
         },
       },
     },
+  };
+
+  return mergeConfig(clientConfig, serverEnvConfig);
+};
+
+export async function developViteServer(options: DevelopOptions): Promise<void> {
+  const { cwd, logger, tsconfig } = options;
+
+  // The runner is created from the Vite server, but the Vite client-env config
+  // (and `writeStaticClientFiles`) need a Strapi instance for its config (admin
+  // path, env, target, httpServer for HMR). Strapi's constructor loads config
+  // SYNCHRONOUSLY via native require (config-loader does NOT use `importModule`),
+  // so we can construct ONE instance up front, build the dev config from it, and
+  // reuse that SAME instance as the booted app — no second Strapi (which would
+  // clobber `global.strapi`). `importModule` is late-bound through the `runner`
+  // closure below: it is only ever CALLED during `app.load()`, by which point
+  // the Vite server (and thus `runner`) exists.
+  let runner: ModuleRunner | undefined;
+
+  // Construct (but do NOT yet load) a Strapi instance. `importModule` is
+  // late-bound through the `runner` closure: it is only CALLED during
+  // `instance.load()`, by which point the Vite server (and `runner`) exists.
+  const constructApp = (): Promise<Core.Strapi> =>
+    createStrapiApp({
+      cwd,
+      importModule(id: string) {
+        if (!runner) {
+          throw new Error('Strapi: Vite server runner not initialised yet');
+        }
+        return runner.import(id);
+      },
+      // Wire the coarse-reload routine so a Strapi-internal reload trigger
+      // (e.g. a content-type change calling `strapi.reload()`) also reloads
+      // in-process rather than signalling a cluster re-fork.
+      onReload() {
+        return reload('strapi.reload()');
+      },
+    });
+
+  let app: Core.Strapi | undefined = await constructApp();
+
+  // Build the admin build context from the SAME instance (no second Strapi,
+  // which would clobber `global.strapi`).
+  const ctx = await createBuildContext({
+    cwd,
+    logger,
+    strapi: app,
+    tsconfig,
+    options,
   });
 
-  let app: Core.Strapi | undefined;
+  const adminCtx: ServeAdminContext = {
+    cwd,
+    basePath: ctx.basePath,
+    adminPath: ctx.adminPath,
+    logger,
+  };
+
+  const vite = await createServer(await buildDevServerConfig(ctx));
 
   const shutdown = async (code = 0): Promise<void> => {
     try {
@@ -109,8 +187,10 @@ export async function developViteServer(options: DevelopOptions): Promise<void> 
     shutdown(0).catch(() => process.exit(1));
   });
 
-  // Landmine 1: access the runner once, early, deliberately.
-  const runner = getServerRunner(vite);
+  // Landmine 1: access the runner once, early, deliberately. Assigning the
+  // outer `runner` here is what arms the late-bound `importModule` closures
+  // captured by `constructApp` above.
+  runner = getServerRunner(vite);
 
   /**
    * Coarse, in-process reload (Phase B Task 5 — the Phase B win over the
@@ -158,19 +238,30 @@ export async function developViteServer(options: DevelopOptions): Promise<void> 
     }
   };
 
+  /**
+   * Load, wire the admin, and start a constructed Strapi instance.
+   *
+   * Ordering is load-bearing: the admin middleware must be mounted on the Koa
+   * router AFTER `load()` (the server service exists) but BEFORE `start()`
+   * (which calls `server.mount()` → `app.use(router.routes())`, freezing the
+   * router into the Koa pipeline). `mountViteAdmin` registers under the admin
+   * path BEFORE Strapi's final 404 handler, so admin requests are intercepted
+   * while `/api` and everything else fall through to normal Strapi routing.
+   */
+  const loadStartMount = async (instance: Core.Strapi): Promise<void> => {
+    await instance.load(); // register → bootstrap (re-imports app source fresh)
+    mountViteAdmin(instance, vite, adminCtx); // /admin → vite middlewares + SPA
+    await instance.start(); // Strapi's Koa server begins listening
+  };
+
   const bootApp = async (): Promise<Core.Strapi> => {
-    const next = await createStrapiApp({
-      cwd,
-      importModule: (id: string) => runner.import(id),
-      // Wire the SAME coarse-reload routine so a Strapi-internal reload trigger
-      // (e.g. a content-type change calling `strapi.reload()`) also reloads
-      // in-process rather than signalling a cluster re-fork.
-      onReload() {
-        return reload('strapi.reload()');
-      },
-    });
-    await next.load(); // register → bootstrap (re-imports app source fresh)
-    await next.start(); // Strapi's Koa server begins listening
+    const next = await constructApp();
+    // Re-materialise the admin SPA entry + generated module from the fresh
+    // instance so plugin/customisation changes are reflected after a reload.
+    await writeStaticClientFiles(
+      await createBuildContext({ cwd, logger, strapi: next, tsconfig, options })
+    );
+    await loadStartMount(next);
     return next;
   };
 
@@ -254,9 +345,19 @@ export async function developViteServer(options: DevelopOptions): Promise<void> 
     // Boot the real app. server-entry is required natively (above), so
     // @strapi/core loads via CJS; the runner is handed to Strapi as
     // `importModule` so APP source resolves in-process from source.
-    app = await bootApp();
+    //
+    // The initial `app` was already constructed up front (to build `ctx`); we
+    // reuse it rather than constructing a second instance. We only need to
+    // materialise the admin SPA entry, then load → mount admin → start.
+    if (!app) {
+      throw new Error('Strapi: app was not constructed');
+    }
+    await writeStaticClientFiles(ctx);
+    await loadStartMount(app);
 
-    logger.info('[vite-server] Strapi booted through the Vite server runner (source-only).');
+    logger.info(
+      '[vite-server] Strapi booted through the Vite server runner (source-only); admin served from the same Vite server.'
+    );
 
     // Wire the coarse in-process reload to server-graph file changes. We watch
     // Vite's chokidar instance directly (the dev server is in middlewareMode, so
