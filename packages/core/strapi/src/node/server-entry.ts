@@ -66,14 +66,27 @@ export async function createStrapiApp(opts: CreateStrapiAppOptions): Promise<Cor
 // eslint-disable-next-line @typescript-eslint/naming-convention -- build-time define constant
 declare const __STRAPI_APP_DIR__: string | undefined;
 
-export async function bootProduction(): Promise<Core.Strapi> {
+/**
+ * The build-time app-source manifest (Task C5). Passed by the manifest prod
+ * entry when the app source is inlined into the bundle (TS prod, source-only);
+ * `undefined` for a JS-disk app (the loaders read app source from disk).
+ */
+export interface ProductionAppManifest {
+  files: string[];
+  load: (absPath: string) => Promise<unknown>;
+  loadSync: (absPath: string) => unknown;
+}
+
+export async function bootProduction(manifest?: ProductionAppManifest): Promise<Core.Strapi> {
   // `__STRAPI_APP_DIR__` is substituted by `define` at build time. The fallback to
   // the bundle's own directory keeps the function safe if it is ever evaluated
   // without the define (e.g. a stray import from source) — the bundle always sits
   // inside the app dir, so its directory IS the app dir at runtime.
   const appDir = typeof __STRAPI_APP_DIR__ === 'string' ? __STRAPI_APP_DIR__ : __dirname;
 
-  const app = createStrapi({ appDir, distDir: appDir });
+  // When a manifest is supplied the app source is inlined: pass it so Strapi's
+  // loaders discover + load app modules from the bundle instead of disk.
+  const app = createStrapi({ appDir, distDir: appDir, appManifest: manifest });
 
   await app.start();
 

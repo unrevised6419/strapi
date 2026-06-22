@@ -10,6 +10,7 @@ import { loadFiles } from '../../utils/load-files';
 import { getEnabledPlugins } from './get-enabled-plugins';
 import { getUserPluginsConfig } from './get-user-plugins-config';
 import { getGlobalId } from '../../domain/content-type';
+import { getManifest, manifestHas } from '../../utils/app-manifest';
 
 interface Plugins {
   [key: string]: Plugin.LoadedPlugin;
@@ -126,8 +127,13 @@ export default async function loadPlugins(strapi: Core.Strapi) {
       );
     }
 
-    // only load plugins with a server entrypoint
-    if (!(await fse.pathExists(serverEntrypointPath))) {
+    // only load plugins with a server entrypoint. A LOCAL plugin's entrypoint
+    // (e.g. `src/plugins/<name>/strapi-server.ts`) may be inlined in the bundle
+    // and absent on disk — accept it when the manifest records it.
+    if (
+      !manifestHas(getManifest(strapi), serverEntrypointPath) &&
+      !(await fse.pathExists(serverEntrypointPath))
+    ) {
       continue;
     }
 

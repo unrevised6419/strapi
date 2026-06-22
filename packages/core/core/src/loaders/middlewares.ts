@@ -3,6 +3,7 @@ import fse from 'fs-extra';
 import { importDefault, unwrapModule } from '@strapi/utils';
 import type { Core } from '@strapi/types';
 import { middlewares as internalMiddlewares } from '../middlewares';
+import { getManifest, manifestReaddir, manifestDirExists } from '../utils/app-manifest';
 
 // Source extensions loaded via the runner on the experimental source-only path.
 const SOURCE_EXTS = ['.js', '.ts', '.mts', '.cts', '.mjs', '.cjs'];
@@ -17,15 +18,16 @@ export default async function loadMiddlewares(strapi: Core.Strapi) {
 
 const loadLocalMiddlewares = async (strapi: Core.Strapi) => {
   const dir = strapi.dirs.dist.middlewares;
+  const manifest = getManifest(strapi);
 
-  if (!(await fse.pathExists(dir))) {
+  if (!manifestDirExists(manifest, dir) && !(await fse.pathExists(dir))) {
     return {};
   }
 
   const importModule = strapi.importModule;
 
   const middlewares: Record<string, Core.MiddlewareFactory> = {};
-  const paths = await fse.readdir(dir, { withFileTypes: true });
+  const paths = manifestReaddir(manifest, dir) ?? (await fse.readdir(dir, { withFileTypes: true }));
 
   for (const fd of paths) {
     const { name } = fd;

@@ -6,6 +6,7 @@ import { get, pickBy, defaultsDeep, map, prop, pipe } from 'lodash/fp';
 import { strings } from '@strapi/utils';
 import type { Core } from '@strapi/types';
 import { getUserPluginsConfig } from './get-user-plugins-config';
+import { getManifest, manifestDirExists, manifestHas } from '../../utils/app-manifest';
 
 interface PluginMeta {
   enabled: boolean;
@@ -74,7 +75,10 @@ const toDetailedDeclaration = (declaration: boolean | PluginDeclaration) => {
       } catch (e) {
         pathToPlugin = resolve(strapi.dirs.app.root, declaration.resolve);
 
-        if (!existsSync(pathToPlugin) || !statSync(pathToPlugin).isDirectory()) {
+        // A LOCAL plugin inlined into the bundle (Task C5) has no dir on disk —
+        // accept it when the manifest records files under that directory.
+        const inManifest = manifestDirExists(getManifest(strapi), pathToPlugin);
+        if (!inManifest && (!existsSync(pathToPlugin) || !statSync(pathToPlugin).isDirectory())) {
           throw new Error(`${declaration.resolve} couldn't be resolved`);
         }
       }
@@ -139,7 +143,7 @@ export const getEnabledPlugins = async (strapi: Core.Strapi, { client } = { clie
     validatePluginName(pluginName);
 
     declaredPlugins[pluginName] = {
-      ...toDetailedDeclaration(declaration),
+      ...toDetailedDeclaration(declaration as boolean | PluginDeclaration),
       info: {},
     };
 
@@ -148,7 +152,13 @@ export const getEnabledPlugins = async (strapi: Core.Strapi, { client } = { clie
     // for manually resolved plugins
     if (pathToPlugin) {
       const packagePath = join(pathToPlugin, 'package.json');
-      const packageInfo = require(packagePath);
+      // A local plugin inlined into the bundle: read its package.json from the
+      // manifest (the JSON is inlined) when it is not on disk.
+      const manifest = getManifest(strapi);
+      const packageInfo = manifestHas(manifest, packagePath)
+        ? ((manifest!.loadSync(packagePath) as { default?: unknown })?.default ??
+          manifest!.loadSync(packagePath))
+        : require(packagePath);
 
       if (isStrapiPlugin(packageInfo)) {
         declaredPlugins[pluginName].info = packageInfo.strapi || {};

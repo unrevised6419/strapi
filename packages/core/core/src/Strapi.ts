@@ -8,6 +8,7 @@ import { Database } from '@strapi/database';
 import type { Core, Modules, UID, Schema } from '@strapi/types';
 
 import { loadConfiguration } from './configuration';
+import type { AppManifest } from './utils/app-manifest';
 
 import * as factories from './factories';
 
@@ -58,6 +59,14 @@ class Strapi extends Container implements Core.Strapi {
   importModule?: (id: string) => Promise<unknown>;
 
   /**
+   * Experimental (Phase C / Task C5): the build-time app-source manifest. When
+   * the app source is inlined into the production bundle (TS prod, source-only),
+   * loaders DISCOVER and LOAD app modules through this manifest instead of disk.
+   * Unset on every other path (dev, JS-disk prod) — loaders use disk as before.
+   */
+  appManifest?: AppManifest;
+
+  /**
    * Experimental Vite server path: in-process reload hook. When set, the
    * `reload` service drives this instead of signalling a cluster re-fork.
    */
@@ -66,7 +75,24 @@ class Strapi extends Container implements Core.Strapi {
   constructor(opts: StrapiOptions) {
     super();
 
-    this.importModule = opts.importModule;
+    this.appManifest = opts.appManifest;
+    // When the app source is inlined (manifest present) and no explicit
+    // `importModule` was supplied, back `importModule` with the manifest so the
+    // loaders resolve the INLINED app module rather than `require`-ing from disk.
+    // Paths NOT in the manifest (installed plugins, the external `@strapi/*` dist
+    // graph) fall through to native `require` — the bundle externalizes them, so
+    // they are present on disk and load normally.
+    this.importModule =
+      opts.importModule ??
+      (opts.appManifest
+        ? (id) => {
+            if (opts.appManifest!.files.includes(id)) {
+              return opts.appManifest!.load(id);
+            }
+            // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require, import/no-dynamic-require
+            return Promise.resolve(require(id));
+          }
+        : undefined);
     this.onReload = opts.onReload;
     this.internal_config = loadConfiguration(opts);
 
@@ -614,6 +640,12 @@ export interface StrapiOptions {
   autoReload?: boolean;
   serveAdminPanel?: boolean;
   importModule?: (id: string) => Promise<unknown>;
+  /**
+   * Experimental (Phase C / Task C5): the build-time app-source manifest. When
+   * present, loaders discover + load app source from the inlined bundle instead
+   * of disk, and `importModule` defaults to the manifest's async getter.
+   */
+  appManifest?: AppManifest;
   /**
    * Experimental: in-process reload hook for the Vite server path. When set, the
    * `reload` service calls this instead of signalling a cluster re-fork.

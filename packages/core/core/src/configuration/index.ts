@@ -98,10 +98,12 @@ export const loadConfiguration = (opts: StrapiOptions) => {
   };
 
   // See packages/core/core/src/domain/module/index.ts for plugin config loading
-  const baseConfig = omit('plugins', loadConfigDir(configDir)); // plugin config will be loaded later
+  // `opts.appManifest` (experimental, prod bundle) lets the sync config loader
+  // discover + evaluate TS config inlined into the bundle instead of disk.
+  const baseConfig = omit('plugins', loadConfigDir(configDir, opts.appManifest)); // plugin config will be loaded later
 
   const envDir = path.resolve(configDir, 'env', process.env.NODE_ENV as string);
-  const envConfig = loadConfigDir(envDir);
+  const envConfig = loadConfigDir(envDir, opts.appManifest);
 
   const config = _.merge(rootConfig, defaultConfig, baseConfig, envConfig);
 

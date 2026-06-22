@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { InlineConfig } from 'vite';
 
 import type { BuildContext } from '../create-build-context';
+import { appManifestPlugin, VIRTUAL_ID } from './app-manifest-plugin';
 
 /**
  * Phase C Task C1 — build the Vite `server` environment to a single-file CJS
@@ -31,6 +32,13 @@ export const externalPredicate = (id: string): boolean => {
   if (id.startsWith('node:')) {
     return true;
   }
+  // The app-source manifest is a virtual module the manifest plugin resolves +
+  // inlines (Task C5). It must NOT be externalized despite being a bare-looking
+  // specifier, or `require('virtual:strapi-app-manifest')` survives into the
+  // bundle and fails at runtime.
+  if (id === VIRTUAL_ID || id.startsWith('\0')) {
+    return false;
+  }
   if (id.startsWith('.') || path.isAbsolute(id)) {
     return false;
   }
@@ -43,11 +51,48 @@ export const externalPredicate = (id: string): boolean => {
  * resolves to `…/node/server-prod-entry.{ts,js}` in both the jest (src) run and
  * the shipped package (dist) because `require.resolve` handles the extension.
  */
-// Resolved at runtime; the file exists as src/node/server-prod-entry.ts (jest) and
-// dist/node/server-prod-entry.js (shipped package), but the static analyzer only
-// sees the literal.
-// eslint-disable-next-line node/no-missing-require
-const resolveProdEntry = (): string => require.resolve('../server-prod-entry');
+/**
+ * Resolve a prod entry file across BOTH package layouts:
+ *
+ *  - jest / source run: the entry sits next to this module at `../<name>`
+ *    (`src/node/server-prod-entry*.ts`).
+ *  - shipped package: this module is bundled to `dist/src/node/vite/` while the
+ *    entries are emitted (per `rollup.config.mjs`) to `dist/node/`, i.e.
+ *    `../../../node/<name>` relative to here.
+ *
+ * Try the sibling layout first, then the shipped `node/` layout. (A naive
+ * `require.resolve('../<name>')` resolves only in the source/jest run and
+ * throws `Cannot find module` in the shipped package.)
+ */
+const resolveEntry = (name: string): string => {
+  const candidates = [`../${name}`, `../../../node/${name}`];
+  for (const candidate of candidates) {
+    try {
+      // eslint-disable-next-line node/no-missing-require
+      return require.resolve(candidate);
+    } catch {
+      // try the next layout
+    }
+  }
+  throw new Error(
+    `[strapi] could not resolve the prod entry "${name}" in any known package layout`
+  );
+};
+
+const resolveProdEntry = (): string => resolveEntry('server-prod-entry');
+
+// The manifest prod entry (Task C5): imports `virtual:strapi-app-manifest` so
+// Rolldown inlines the app's own source (TS prod, source-only). Used when the
+// app is TypeScript; the JS-disk app uses the plain prod entry above.
+const resolveManifestEntry = (): string => resolveEntry('server-prod-entry-manifest');
+
+/**
+ * Inline the app's own source into the bundle (TS prod, source-only) when the
+ * app is a TypeScript project. A JS app keeps loading its `src/**.js` from disk
+ * (the proven C1-C4 path); only a TS app — which has no `.js` on disk in prod —
+ * needs its source inlined via the manifest.
+ */
+const shouldInlineAppSource = (ctx: BuildContext): boolean => Boolean(ctx.tsconfig?.config);
 
 export function resolveServerBuildConfig(ctx: BuildContext): InlineConfig {
   const appDir = ctx.appDir ?? ctx.cwd;
@@ -67,10 +112,16 @@ export function resolveServerBuildConfig(ctx: BuildContext): InlineConfig {
   // clean. See `builder.ts` for the full dirs reconciliation.
   const outDir = path.join(appDir, 'dist');
 
+  const inlineAppSource = shouldInlineAppSource(ctx);
+
   return {
     root: ctx.cwd,
     configFile: false,
     define: { __STRAPI_APP_DIR__: JSON.stringify(appDir) },
+    // The manifest plugin is harmless when unused (it only resolves the virtual
+    // module the manifest entry imports), but only register it on the inlined
+    // path so the JS-disk build is byte-for-byte unchanged.
+    plugins: inlineAppSource ? [appManifestPlugin(appDir)] : [],
     build: {
       ssr: true,
       outDir,
@@ -79,7 +130,9 @@ export function resolveServerBuildConfig(ctx: BuildContext): InlineConfig {
       sourcemap: true,
       target: 'node22',
       rollupOptions: {
-        input: { server: resolveProdEntry() },
+        // TS app: the manifest entry inlines `src/**` + `config/**` (source-only
+        // prod). JS app: the plain entry loads `src/**.js` from disk at runtime.
+        input: { server: inlineAppSource ? resolveManifestEntry() : resolveProdEntry() },
         external: externalPredicate,
         output: {
           format: 'cjs',

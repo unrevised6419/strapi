@@ -3,6 +3,7 @@ import { statSync, existsSync } from 'fs';
 import { yup, importDefault, unwrapModule } from '@strapi/utils';
 
 import type { Core } from '@strapi/types';
+import { getManifest, manifestDirExists, manifestHas } from '../utils/app-manifest';
 
 // Candidate source entry extensions for the experimental source-only boot.
 const SRC_INDEX_EXTS = ['index.ts', 'index.js', 'index.mts', 'index.cts', 'index.mjs', 'index.cjs'];
@@ -21,7 +22,10 @@ const validateSrcIndex = (srcIndex: unknown) => {
 };
 
 export default async (strapi: Core.Strapi) => {
-  if (!existsSync(strapi.dirs.dist.src)) {
+  const manifest = getManifest(strapi);
+
+  // Discovery: the src dir exists either on disk or in the inlined manifest.
+  if (!existsSync(strapi.dirs.dist.src) && !manifestDirExists(manifest, strapi.dirs.dist.src)) {
     return;
   }
 
@@ -31,9 +35,12 @@ export default async (strapi: Core.Strapi) => {
 
   if (importModule) {
     // Source-only path: resolve whichever index source entry exists (e.g.
-    // `index.ts`) and load it through the runner.
+    // `index.ts`) — from the manifest when inlined, else from disk — and load it
+    // through `importModule` (manifest-backed in the bundle case).
     const entry = SRC_INDEX_EXTS.map((name) => resolve(strapi.dirs.dist.src, name)).find(
-      (candidate) => existsSync(candidate) && !statSync(candidate).isDirectory()
+      (candidate) =>
+        manifestHas(manifest, candidate) ||
+        (existsSync(candidate) && !statSync(candidate).isDirectory())
     );
 
     if (!entry) {
