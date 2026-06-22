@@ -32,6 +32,11 @@ const command: StrapiCommand = ({ ctx }) => {
     .option('--sourcemap', 'Produce sourcemaps', false)
     .option('--stats', 'Print build statistics to the console', false)
     .option('--install-deps', 'Auto-install missing admin dependencies', false)
+    .option(
+      '--experimental-vite-build',
+      'Build the server to a single-file bundle via the Vite builder (experimental)',
+      process.env.STRAPI_EXPERIMENTAL_VITE_BUILD === 'true'
+    )
     .description('Build the strapi admin app')
     .action(async (options: BuildCLIOptions) => {
       return action({ ...options, ...ctx });
