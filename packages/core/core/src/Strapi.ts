@@ -55,9 +55,12 @@ class Strapi extends Container implements Core.Strapi {
 
   internal_config: Record<string, unknown> = {};
 
+  importModule?: (id: string) => Promise<unknown>;
+
   constructor(opts: StrapiOptions) {
     super();
 
+    this.importModule = opts.importModule;
     this.internal_config = loadConfiguration(opts);
 
     this.registerInternalServices();
@@ -603,6 +606,7 @@ export interface StrapiOptions {
   distDir: string;
   autoReload?: boolean;
   serveAdminPanel?: boolean;
+  importModule?: (id: string) => Promise<unknown>;
 }
 
 export default Strapi;
