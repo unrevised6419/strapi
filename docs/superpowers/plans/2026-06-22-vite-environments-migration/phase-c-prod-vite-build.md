@@ -379,3 +379,49 @@ git add -A && git commit -m "test(strapi): verify experimental vite production b
 
 Plan complete. After Phase C is green, proceed to
 [`phase-d-remove-old-toolchain.md`](./phase-d-remove-old-toolchain.md).
+
+---
+
+## Phase C Results
+
+**Date:** 2026-06-22. **Branch:** `phase-c-prod-vite-build`.
+
+### What the experimental prod build delivers
+
+- `strapi build --experimental-vite-build` (or `STRAPI_EXPERIMENTAL_VITE_BUILD=true`) emits two artifacts: the admin SPA under `<appDir>/build/` and a single-file CJS `<appDir>/dist/server.js`. For JS apps the bundle is a thin boot shim (~1.7 kB); for TS apps all app source (`src/**`, `config/**`, content-type `schema.json`, components, and local `src/plugins/*`) is statically inlined via the build-time manifest (~16 kB for kitchensink-ts with 20 modules). Installed plugins and the entire `@strapi/*` framework stay external (bare-specifier `require`, resolved by walking up from `dist/` to `app/node_modules`). Source maps are emitted alongside the bundle (`dist/server.js.map`); `strapi start` passes `--enable-source-maps` at spawn so stack frames map back to original source file:line.
+
+- `strapi start` auto-detects `dist/server.js`: if present it execs `node --enable-source-maps dist/server.js`; if absent it falls back to the legacy start unchanged.
+
+### Boot evidence (2026-06-22)
+
+**JS app (getstarted) — flag ON:**
+
+- `yarn build --experimental-vite-build` → `dist/server.js` (1.73 kB) + `build/` (admin SPA).
+- `node --enable-source-maps dist/server.js` → `Strapi started successfully`; `curl /admin` → 200 admin HTML; `curl /api/articles` → 403 (auth required; proves API server live).
+
+**TS app (kitchensink-ts) — flag ON, source-only proof:**
+
+- `yarn build --experimental-vite-build` → 20 modules inlined (confirmed by source map sources list: `config/*.ts`, `src/api/ping/**`, `src/components/meta/seo.json`, `src/plugins/local/strapi-server.ts`, entry shims).
+- `src/` and `config/` directories renamed away on disk → `node --enable-source-maps dist/server.js` → `Strapi started successfully` (~1.1 s); `curl /api/ping/pong` → `{"pong":true,"from":"inlined-ts-controller","service":"hello-from-inlined-ts-service"}` (200). Inlined TS controller + service, proving source-only boot.
+- **Component gap closed (C5b):** with a `src/components/meta/seo.json` fixture inlined in the bundle, `components_meta_seos` DB table was created on first boot (schema loaded from manifest, not disk). The gap was a stale `@strapi/core` dist — the manifest-aware `loadComponents` changes in C5b were not compiled. Fixed by rebuilding `@strapi/core` (`yarn nx build @strapi/core`).
+
+**Source maps:** `dist/server.js.map` present; `--enable-source-maps` flag passed by `strapi start`; sources list confirms original `.ts` paths.
+
+### Spike-locked decisions realized
+
+| Decision                                        | Realized                                                                                                                 |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| CJS output, not ESM                             | `output.format: 'cjs'` in `build-server.ts` — avoids `ERR_UNSUPPORTED_DIR_IMPORT` on `@strapi/core`'s `dist/index.mjs`   |
+| Single file, not `preserveModules`              | `codeSplitting: false` + plain `rollupOptions.input` (not lib mode) — per-frame accurate source maps                     |
+| Bundle inside app dir                           | `outDir = join(appDir, 'dist')` — externals walk up to `app/node_modules`                                                |
+| App dir injected at build time                  | `define.__STRAPI_APP_DIR__` → `bootProduction` reads it; never `process.cwd()`                                           |
+| Source maps via `--enable-source-maps` at spawn | `spawn(process.execPath, ['--enable-source-maps', target.file])` in `start.ts`                                           |
+| TS app source inlined via manifest              | `appManifestPlugin(appDir)` at build time → `MODULES`/`FILES` in bundle; `getManifest(strapi)` threads it to all loaders |
+
+### Honest remaining items
+
+- **C4 signal-forwarding TODO:** `strapi start` spawns `node` as a child process and proxies stdio, but SIGINT/SIGTERM forwarding to the child is not hardened. A Ctrl-C in the shell kills the parent but the child may linger if it does not inherit the signal. Practical issue only under process managers (PM2, Docker) — fine for local dev.
+- **TS type-check warnings:** `src/admin/app.example.tsx` triggers `TS2307` (moduleResolution mismatch) during the `noEmit` type-check step; it is non-blocking (tsc exits 0 with warnings). Pre-existing issue unrelated to Phase C.
+- **`yarn prettier:check` failures:** 9 files, all pre-existing (`.superpowers/spike-c5/` generated outputs + `examples/` `.strapi-updater.json` auto-generated files). Phase C files are clean.
+- **E2E deferred to CI:** `yarn test:e2e` / playwright hangs locally. CI must run e2e against both flag-on and flag-off builds before merging.
+- **examples/ fixtures not committed:** `examples/kitchensink-ts/src/api/ping/`, `src/plugins/local/`, `config/plugins.ts` are the Phase C TS boot fixtures. Committed plan doc + regression fix only (per task constraints). These files exist on disk and prove the path but are not tracked.
