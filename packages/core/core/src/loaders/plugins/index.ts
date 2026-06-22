@@ -10,7 +10,7 @@ import { loadFiles } from '../../utils/load-files';
 import { getEnabledPlugins } from './get-enabled-plugins';
 import { getUserPluginsConfig } from './get-user-plugins-config';
 import { getGlobalId } from '../../domain/content-type';
-import { getManifest, manifestHas } from '../../utils/app-manifest';
+import { getManifest, manifestDirExists, manifestHas } from '../../utils/app-manifest';
 
 interface Plugins {
   [key: string]: Plugin.LoadedPlugin;
@@ -32,14 +32,25 @@ const defaultPlugin = {
   contentTypes: {},
 };
 
-const applyUserExtension = async (plugins: Plugins) => {
-  const extensionsDir = strapi.dirs.dist.extensions;
-  if (!(await fse.pathExists(extensionsDir))) {
+const applyUserExtension = async (strapiInstance: Core.Strapi, plugins: Plugins) => {
+  const extensionsDir = strapiInstance.dirs.dist.extensions;
+  const manifest = getManifest(strapiInstance);
+
+  // Manifest-aware existence check; off-path falls through to disk as before.
+  if (!manifestDirExists(manifest, extensionsDir) && !(await fse.pathExists(extensionsDir))) {
     return;
   }
 
-  const extendedSchemas = await loadFiles(extensionsDir, '**/content-types/**/schema.json');
-  const strapiServers = await loadFiles(extensionsDir, '**/strapi-server.js');
+  const importModule = strapiInstance.importModule;
+
+  const extendedSchemas = await loadFiles(extensionsDir, '**/content-types/**/schema.json', {
+    importModule,
+    appManifest: manifest,
+  });
+  const strapiServers = await loadFiles(extensionsDir, '**/strapi-server.js', {
+    importModule,
+    appManifest: manifest,
+  });
 
   for (const pluginName of Object.keys(plugins)) {
     const plugin = plugins[pluginName];
@@ -151,7 +162,7 @@ export default async function loadPlugins(strapi: Core.Strapi) {
 
   // TODO: validate plugin format
   await applyUserConfig(plugins);
-  await applyUserExtension(plugins);
+  await applyUserExtension(strapi, plugins);
 
   for (const pluginName of Object.keys(plugins)) {
     strapi.get('plugins').add(pluginName, plugins[pluginName]);

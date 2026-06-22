@@ -3,6 +3,7 @@ import _ from 'lodash';
 import { pathExists } from 'fs-extra';
 import type { Core, Struct, UID } from '@strapi/types';
 import { loadFiles } from '../utils/load-files';
+import { getManifest, manifestDirExists } from '../utils/app-manifest';
 
 type LoadedComponent = {
   collectionName: string;
@@ -27,7 +28,12 @@ type ComponentMap = {
 };
 
 export default async function loadComponents(strapi: Core.Strapi) {
-  if (!(await pathExists(strapi.dirs.dist.components))) {
+  const manifest = getManifest(strapi);
+  const componentsDir = strapi.dirs.dist.components;
+
+  // Manifest-aware existence check: when a manifest is present use it; otherwise
+  // fall back to disk. Off-path (no manifest) is byte-for-byte unchanged.
+  if (!manifestDirExists(manifest, componentsDir) && !(await pathExists(componentsDir))) {
     return {};
   }
 
@@ -38,8 +44,9 @@ export default async function loadComponents(strapi: Core.Strapi) {
   // via the runner. Off-path keeps the original `js|json` glob and sync loader.
   const pattern = importModule ? '*/*.*(js|ts|mts|cts|mjs|cjs|json)' : '*/*.*(js|json)';
 
-  const map = await loadFiles<LoadedComponents>(strapi.dirs.dist.components, pattern, {
+  const map = await loadFiles<LoadedComponents>(componentsDir, pattern, {
     importModule,
+    appManifest: manifest,
   });
 
   const components = Object.keys(map).reduce((acc, category) => {
