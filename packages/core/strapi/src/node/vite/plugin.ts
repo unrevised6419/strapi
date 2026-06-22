@@ -28,7 +28,9 @@ export function strapi({ ctx: _ctx }: StrapiPluginOptions): Plugin {
           },
         };
       }
-      // Phase B adds the 'server' environment here.
+      if (name === 'server') {
+        return { resolve: { conditions: ['node', 'strapi-server'] } };
+      }
       return undefined;
     },
   };
