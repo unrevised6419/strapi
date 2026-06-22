@@ -31,7 +31,16 @@ export default async function loadComponents(strapi: Core.Strapi) {
     return {};
   }
 
-  const map = await loadFiles<LoadedComponents>(strapi.dirs.dist.components, '*/*.*(js|json)');
+  const importModule = strapi.importModule;
+
+  // Component schemas are JSON; on the experimental source-only path also widen
+  // the glob to TS/other source so a `.ts`-authored component schema can load
+  // via the runner. Off-path keeps the original `js|json` glob and sync loader.
+  const pattern = importModule ? '*/*.*(js|ts|mts|cts|mjs|cjs|json)' : '*/*.*(js|json)';
+
+  const map = await loadFiles<LoadedComponents>(strapi.dirs.dist.components, pattern, {
+    importModule,
+  });
 
   const components = Object.keys(map).reduce((acc, category) => {
     Object.keys(map[category]).forEach((key) => {

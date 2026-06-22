@@ -1,8 +1,11 @@
 import { resolve } from 'path';
 import { statSync, existsSync } from 'fs';
-import { yup, importDefault } from '@strapi/utils';
+import { yup, importDefault, unwrapModule } from '@strapi/utils';
 
 import type { Core } from '@strapi/types';
+
+// Candidate source entry extensions for the experimental source-only boot.
+const SRC_INDEX_EXTS = ['index.ts', 'index.js', 'index.mts', 'index.cts', 'index.mjs', 'index.cjs'];
 
 const srcSchema = yup
   .object()
@@ -17,17 +20,36 @@ const validateSrcIndex = (srcIndex: unknown) => {
   return srcSchema.validateSync(srcIndex, { strict: true, abortEarly: false });
 };
 
-export default (strapi: Core.Strapi) => {
+export default async (strapi: Core.Strapi) => {
   if (!existsSync(strapi.dirs.dist.src)) {
     return;
   }
 
-  const pathToSrcIndex = resolve(strapi.dirs.dist.src, 'index.js');
-  if (!existsSync(pathToSrcIndex) || statSync(pathToSrcIndex).isDirectory()) {
-    return {};
-  }
+  const importModule = strapi.importModule;
 
-  const srcIndex = importDefault(pathToSrcIndex);
+  let srcIndex: unknown;
+
+  if (importModule) {
+    // Source-only path: resolve whichever index source entry exists (e.g.
+    // `index.ts`) and load it through the runner.
+    const entry = SRC_INDEX_EXTS.map((name) => resolve(strapi.dirs.dist.src, name)).find(
+      (candidate) => existsSync(candidate) && !statSync(candidate).isDirectory()
+    );
+
+    if (!entry) {
+      return {};
+    }
+
+    srcIndex = unwrapModule(await importModule(entry));
+  } else {
+    // Off-path: byte-for-byte the original sync `index.js` resolution.
+    const pathToSrcIndex = resolve(strapi.dirs.dist.src, 'index.js');
+    if (!existsSync(pathToSrcIndex) || statSync(pathToSrcIndex).isDirectory()) {
+      return {};
+    }
+
+    srcIndex = importDefault(pathToSrcIndex);
+  }
 
   try {
     validateSrcIndex(srcIndex);

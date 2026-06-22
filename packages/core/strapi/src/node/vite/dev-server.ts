@@ -12,7 +12,7 @@ import type { RunnableDevEnvironment, InlineConfig } from 'vite';
 import type { ModuleRunner } from 'vite/module-runner';
 import type { Core } from '@strapi/types';
 
-import { strapiCjsInterop } from './cjs-interop';
+import { strapiCjsInterop, strapiFrameworkCjs } from './cjs-interop';
 import { mergeConfigWithUserConfig, resolveDevelopmentConfig } from './config';
 import { mountViteAdmin, type ServeAdminContext } from './serve-admin';
 import { createBuildContext, type BuildContext } from '../create-build-context';
@@ -93,12 +93,15 @@ const buildDevServerConfig = async (ctx: BuildContext): Promise<InlineConfig> =>
   const clientConfig = await mergeConfigWithUserConfig(await resolveDevelopmentConfig(ctx), ctx);
 
   const serverEnvConfig: InlineConfig = {
-    // Append the CJS-interop plugin (it only applies to the `server`
-    // environment) without dropping the client plugins (react, strapi, …).
-    plugins: [strapiCjsInterop()],
+    // The framework-redirect plugin must run BEFORE cjs-interop so a bare
+    // `@strapi/*` import in (ESM) app source is rewritten to a native CJS
+    // require before any transform sees it.
+    plugins: [strapiFrameworkCjs(ctx.cwd), strapiCjsInterop()],
     environments: {
       server: {
-        resolve: { conditions: ['node', 'strapi-server'] },
+        resolve: {
+          conditions: ['node', 'strapi-server'],
+        },
         // Make the `server` environment runnable so we get an in-process
         // ModuleRunner (the default dev env may be fetch-only).
         dev: {
