@@ -48,3 +48,34 @@ export async function createStrapiApp(opts: CreateStrapiAppOptions): Promise<Cor
 
   return app;
 }
+
+/**
+ * Phase C — the PRODUCTION boot (no Vite runner). Replaced at build time by the
+ * server-environment Rolldown build (`vite/build-server.ts`), which injects the
+ * absolute app dir as `__STRAPI_APP_DIR__` via `define`. The bundled
+ * `dist/server.js` lives INSIDE the app dir; passing the absolute app dir (never
+ * `process.cwd()`) is what lets app config/content + externalized `@strapi/*`
+ * resolve correctly when the process is launched from an arbitrary cwd
+ * (verified in `.superpowers/sdd/phase-c-assumption5-spike.md`).
+ *
+ * This path is intentionally distinct from {@link createStrapiApp} (the dev boot,
+ * driven by the Module Runner in `dev-server.ts`) so the Phase B dev flow is
+ * unaffected. `__STRAPI_APP_DIR__` is a compile-time constant — referenced only
+ * here, only reached when the bundle (not source) is executed.
+ */
+// eslint-disable-next-line @typescript-eslint/naming-convention -- build-time define constant
+declare const __STRAPI_APP_DIR__: string | undefined;
+
+export async function bootProduction(): Promise<Core.Strapi> {
+  // `__STRAPI_APP_DIR__` is substituted by `define` at build time. The fallback to
+  // the bundle's own directory keeps the function safe if it is ever evaluated
+  // without the define (e.g. a stray import from source) — the bundle always sits
+  // inside the app dir, so its directory IS the app dir at runtime.
+  const appDir = typeof __STRAPI_APP_DIR__ === 'string' ? __STRAPI_APP_DIR__ : __dirname;
+
+  const app = createStrapi({ appDir, distDir: appDir });
+
+  await app.start();
+
+  return app;
+}
