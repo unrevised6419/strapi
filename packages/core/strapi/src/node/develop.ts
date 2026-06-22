@@ -98,32 +98,23 @@ const cleanupDistDirectory = async ({
   cleaningSpinner?.succeed();
 };
 
-const develop = async ({
-  cwd,
-  polling,
-  logger,
-  tsconfig,
-  watchAdmin,
-  buildAdmin,
-  installDeps = true,
-  experimentalViteServer,
-  ...options
-}: DevelopOptions) => {
+const develop = async (developOptions: DevelopOptions) => {
+  const {
+    cwd,
+    polling,
+    logger,
+    tsconfig,
+    watchAdmin,
+    buildAdmin,
+    installDeps = true,
+    experimentalViteServer,
+    ...options
+  } = developOptions;
   const timer = getTimer();
 
   if (experimentalViteServer) {
     const { developViteServer } = await import('./vite/dev-server');
-    return developViteServer({
-      cwd,
-      polling,
-      logger,
-      tsconfig,
-      watchAdmin,
-      buildAdmin,
-      installDeps,
-      experimentalViteServer,
-      ...options,
-    });
+    return developViteServer(developOptions);
   }
 
   if (cluster.isPrimary) {
