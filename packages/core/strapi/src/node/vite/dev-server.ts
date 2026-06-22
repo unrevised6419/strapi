@@ -3,7 +3,8 @@ import { join } from 'node:path';
 
 import { createServer, isRunnableDevEnvironment } from 'vite';
 
-import type { ModuleRunner, RunnableDevEnvironment } from 'vite';
+import type { RunnableDevEnvironment } from 'vite';
+import type { ModuleRunner } from 'vite/module-runner';
 import type { DevelopOptions } from '../develop';
 
 type ViteServer = Awaited<ReturnType<typeof createServer>>;
