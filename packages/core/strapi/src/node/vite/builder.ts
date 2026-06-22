@@ -66,6 +66,6 @@ export async function buildApp(ctx: BuildContext): Promise<void> {
   // Admin `client` SPA → <dirs.dist.root>/build
   await buildClientAdmin(ctx);
 
-  // `server` env → <appDir>/server.js (CJS single file)
+  // `server` env → <appDir>/dist/server.js (CJS single file)
   await buildServer(ctx);
 }
