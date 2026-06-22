@@ -515,6 +515,40 @@ git add -A && git commit -m "test(strapi): verify experimental vite server path 
 
 ---
 
+## Spike results
+
+> Recorded after Task 7 verification (2026-06-22). Gates Phases C and D.
+
+### README assumptions 1–4 outcome
+
+| #   | Assumption                                                                                    | Result                                 | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --- | --------------------------------------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | A `ModuleRunner` can host a **resident** Koa app (not request-scoped SSR) for the dev session | **CONFIRMED**                          | T2 spike: `getServerRunner` succeeds, runner does not tear down. T4: `getstarted` JS app boots register→bootstrap→start in one runner; `/api` returns 403. T6b: `kitchensink-ts` TS app boots, TS controller → `{"pong":true}` HTTP 200. 6 consecutive in-process reloads completed with PID stable (T5).                                                                                                                                                                                                                                                                                        |
+| 2   | `strapi.reload()` works **in-process** — no cluster fork                                      | **CONFIRMED (new path built)**         | Today's `reloader.ts:18` = `process.send?.('reload')` — pure IPC. Phase B built a new in-process path: `createReloader(strapi, { onReload })` dispatches to a supplied hook instead of IPC. The dev-server hook tears down the app, clears both the Vite runner cache and Node `require.cache` for app source, then re-boots. PID stable across 6 reloads in T5 evidence. Pre-condition confirmed FALSE (no in-process path existed); Phase B delivered it.                                                                                                                                      |
+| 3   | Config files load through the runner with correct **boot ordering**                           | **PARTIALLY CONFIRMED — deferred gap** | App source (`src/index.ts`, controllers, services, routes, schemas) loads source-only through the runner. However `config/*.ts` files do NOT: `config-loader.ts` runs synchronously inside the Strapi constructor before the Vite server / runner exists, so `importModule` cannot be threaded there without a boot-ordering refactor. Workaround in T6b: `.js` config equivalents. This is a documented gap for Phase C/D. Config loading from source requires moving `loadConfiguration` after the runner is created (or pre-loading TS config through the runner before Strapi construction). |
+| 4   | Koa + Vite **middleware ordering** for `/admin` vs `/api` is workable                         | **CONFIRMED**                          | T6: the single Vite server hosts both `client` (admin SPA) and `server` (runner) environments. `mountViteAdmin` registers a Koa router layer at `/${adminPath}/:path*` _before_ `strapi.start()` (which freezes the router), so `/admin` is intercepted by Vite middleware and `/api` falls through to normal Strapi routing. Curl evidence: `GET /admin` → 200 HTML with `@vite/client`; `GET /api/restaurants` → 403 (real Strapi route). After an in-process server reload, both surfaces still respond correctly.                                                                            |
+
+### Two-graph CJS/ESM architecture (key finding)
+
+The runner evaluates everything as ESM, but Strapi's framework packages (`@strapi/*`) are CJS-only at runtime (their `.mjs` ESM build has broken `lodash/fp` directory imports). Phase B resolved this with a two-graph split:
+
+- **Framework graph** (all `@strapi/*` packages): loaded via native CJS `require` from outside the runner. `strapiFrameworkCjs(cwd)` plugin (server env, `enforce:'pre'`) intercepts bare `@strapi/*` imports and re-exports them as virtual ESM shims backed by `createRequire`. Prevents the runner from touching the broken `.mjs` builds.
+- **App graph** (app source: controllers, services, routes, plugins, schemas): loaded through the runner via `importModule = runner.import`. CJS app source is wrapped by `strapiCjsInterop()` transform plugin.
+
+Both caches must be cleared on reload: `runner.clearCache()` (Vite Module Runner graph) AND `purgeAppRequireCache()` (Node `require.cache` for app-source CJS that bypasses the runner). The `register-routes.ts` clone fix (T5) is load-bearing: framework route singletons are mutated in-place by `register-routes.ts`; under in-process reload a fresh boot sees stale mutations. Fix: register a per-boot shallow clone of each route — semantics preserved, all 27 tests pass.
+
+### Documented gaps (not Phase B regressions)
+
+1. **TS `config/*.ts` not source-only.** `config-loader.ts` is synchronous and runs inside the Strapi constructor before the runner exists. Threading `importModule` requires either (a) making `loadConfiguration` async and deferring it until after the runner is created, or (b) pre-loading TS configs through the runner before constructing Strapi. This is Phase C/D work.
+2. **`resolve:`-string custom middleware stays sync.** `resolveCustomMiddleware` in `services/server/middleware.ts` is left on sync `importDefault`. Threading it would force the entire route-composition chain async — a broad change for a rare code path. Named (pre-registered) middlewares load source-only; this is the common case. Documented as deliberate.
+3. **Admin HMR socket drops on a server-code reload.** `resolveDevelopmentConfig` binds `hmr.server` to the INITIAL `httpServer`. A server-code reload destroys the old httpServer and creates a new one, so the HMR WebSocket drops until the browser reconnects. Admin-only edits do NOT trigger a server reload (filtered by `isServerGraphFile`), so admin HMR persists across the common case. Re-binding the HMR WS on reload is a Task 7+ / Phase C improvement.
+
+### Phase C/D gating status
+
+Phase B's runtime validation is sufficient to proceed with Phase C (prod Vite build) and Phase D (remove old toolchain) detailed planning. The one gap that affects Phase C: TS config loading must be solved before the prod path can eliminate `esbuild-register` entirely. Assumption 5 (single-file server bundle + externalized deps resolves at runtime) remains to be prototyped in Phase C.
+
+---
+
 ## Self-Review
 
 - **Spec coverage:** flag (T1), runner feasibility spike (T2), injectable loader
