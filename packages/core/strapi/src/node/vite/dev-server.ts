@@ -1,3 +1,6 @@
+import path from 'node:path';
+import { createRequire } from 'node:module';
+
 import { createServer, isRunnableDevEnvironment, createRunnableDevEnvironment } from 'vite';
 
 import type { RunnableDevEnvironment } from 'vite';
@@ -106,22 +109,170 @@ export async function developViteServer(options: DevelopOptions): Promise<void> 
     shutdown(0).catch(() => process.exit(1));
   });
 
-  try {
-    // Landmine 1: access the runner once, early, deliberately.
-    const runner = getServerRunner(vite);
+  // Landmine 1: access the runner once, early, deliberately.
+  const runner = getServerRunner(vite);
 
+  /**
+   * Coarse, in-process reload (Phase B Task 5 — the Phase B win over the
+   * cluster-fork+tsc path).
+   *
+   * Landmine 2 (load-bearing): after a Module Runner reload a previously
+   * evaluated module's `exports` go stale. We therefore NEVER reuse the old
+   * `app` or any cached module reference — we:
+   *   1. fully tear down the old Strapi instance (`app.destroy()`),
+   *   2. clear the runner's module cache so the next import re-evaluates fresh,
+   *   3. re-import EVERYTHING and re-boot a brand-new instance.
+   *
+   * `reloading` guards against overlapping reloads; `reloadQueued` coalesces
+   * edits that land mid-reload into a single follow-up pass.
+   */
+  let reloading = false;
+  let reloadQueued = false;
+
+  // Used to purge Node's CJS require cache for app source on reload (see below).
+  const appRequire = createRequire(path.join(cwd, 'noop.js'));
+
+  /**
+   * Landmine 2, the OTHER half: `runner.clearCache()` only drops the Vite runner
+   * (Module Runner) graph — the modules loaded via Strapi's `importModule`
+   * (config + plugin entries). But Strapi's API loader (`loaders/apis.ts`) reads
+   * route/controller/service `.js` files via native `require` (`importDefault`),
+   * whose results live in Node's CJS `require.cache` and are NOT touched by
+   * `runner.clearCache()`. Without purging them, a re-boot reuses the previous
+   * boot's router objects — e.g. the core router's memoized `routes` getter still
+   * holds the route already mutated by `applyExtraParamsToRoutes`, so re-applying
+   * `addInputParams` throws `param "clientMutationId" already exists`.
+   *
+   * We therefore evict every cached module physically under `cwd` (the app dir)
+   * except `node_modules`, so app source re-evaluates fresh on the next boot.
+   * The framework graph (`@strapi/*` under `node_modules`) is deliberately left
+   * cached — it is stateless across boots and re-requiring it is unnecessary.
+   */
+  const purgeAppRequireCache = (): void => {
+    const cache = appRequire.cache;
+    const nm = `${path.sep}node_modules${path.sep}`;
+    for (const id of Object.keys(cache)) {
+      if (id.startsWith(cwd + path.sep) && !id.includes(nm)) {
+        delete cache[id];
+      }
+    }
+  };
+
+  const bootApp = async (): Promise<Core.Strapi> => {
+    const next = await createStrapiApp({
+      cwd,
+      importModule: (id: string) => runner.import(id),
+      // Wire the SAME coarse-reload routine so a Strapi-internal reload trigger
+      // (e.g. a content-type change calling `strapi.reload()`) also reloads
+      // in-process rather than signalling a cluster re-fork.
+      onReload() {
+        return reload('strapi.reload()');
+      },
+    });
+    await next.load(); // register → bootstrap (re-imports app source fresh)
+    await next.start(); // Strapi's Koa server begins listening
+    return next;
+  };
+
+  const reload = async (reason: string): Promise<void> => {
+    if (reloading) {
+      reloadQueued = true;
+      return;
+    }
+    reloading = true;
+    try {
+      logger.info(`[vite-server] reloading (${reason})…`);
+      const start = Date.now();
+
+      // 1. Tear down the old instance fully (frees the Koa port, DB, watchers).
+      try {
+        await app?.destroy();
+      } catch (err) {
+        logger.error(`[vite-server] error destroying old Strapi: ${(err as Error).message}`);
+      }
+      // Drop the reference so a failed re-boot can't leave a stale app around.
+      app = undefined;
+
+      // 2a. Clear the runner module graph so config + plugin entries loaded via
+      //     `importModule` re-evaluate fresh (verified Vite 8 API: clearCache()).
+      runner.clearCache();
+      // 2b. Purge Node's require cache for app source so route/controller/service
+      //     `.js` files loaded via native `require` re-evaluate fresh too. Both
+      //     halves are required to honour Landmine 2 (no stale module refs).
+      purgeAppRequireCache();
+
+      // 3. Re-import everything and re-boot a brand-new instance.
+      app = await bootApp();
+
+      logger.info(`[vite-server] reloaded in ${Date.now() - start}ms (${reason}).`);
+    } catch (err) {
+      const e = err as Error;
+      logger.error(`[vite-server] reload failed: ${e.message}`);
+      if (e.stack) {
+        logger.error(e.stack);
+      }
+    } finally {
+      reloading = false;
+      if (reloadQueued) {
+        reloadQueued = false;
+        reload('coalesced edits').catch(() => {});
+      }
+    }
+  };
+
+  /**
+   * Server-graph file filter: only files that feed the backend graph trigger a
+   * reload. App source lives under `src/` and `config/`; the admin/client graph
+   * (`src/admin/`) and Vite's own internals are explicitly ignored so editing
+   * the admin panel doesn't re-boot the server.
+   *
+   * We also ignore GENERATED output that the backend writes back into `src/` at
+   * bootstrap (e.g. the documentation plugin regenerates
+   * `src/extensions/documentation/documentation/<v>/full_documentation.json` on
+   * every boot). Watching those would trigger a reload on boot and loop, since
+   * each reload re-bootstraps and re-writes the file.
+   */
+  const srcDir = path.join(cwd, 'src');
+  const configDir = path.join(cwd, 'config');
+  const adminDir = path.join(cwd, 'src', 'admin');
+  const docsGenDir = path.join(cwd, 'src', 'extensions', 'documentation', 'documentation');
+  const isServerGraphFile = (file: string): boolean => {
+    const f = path.resolve(file);
+    if (f.startsWith(adminDir + path.sep)) return false; // admin/client graph
+    if (f.startsWith(docsGenDir + path.sep)) return false; // generated OpenAPI spec
+    if (f.includes(`${path.sep}node_modules${path.sep}`)) return false;
+    if (f.endsWith('.json') && f.includes(`${path.sep}extensions${path.sep}`)) return false;
+    return f.startsWith(srcDir + path.sep) || f.startsWith(configDir + path.sep);
+  };
+
+  const onWatchEvent = (file: string): void => {
+    if (!isServerGraphFile(file)) return;
+    reload(path.relative(cwd, file)).catch(() => {});
+  };
+
+  try {
     // Boot the real app. server-entry is required natively (above), so
     // @strapi/core loads via CJS; the runner is handed to Strapi as
     // `importModule` so APP source resolves in-process from source.
-    app = await createStrapiApp({
-      cwd,
-      importModule: (id: string) => runner.import(id),
-    });
-
-    await app.load(); // register → bootstrap
-    await app.start(); // Strapi's Koa server begins listening
+    app = await bootApp();
 
     logger.info('[vite-server] Strapi booted through the Vite server runner (source-only).');
+
+    // Wire the coarse in-process reload to server-graph file changes. We watch
+    // Vite's chokidar instance directly (the dev server is in middlewareMode, so
+    // there is no HMR client driving the server graph for us).
+    //
+    // In middlewareMode Vite only watches files as they enter the module graph;
+    // many backend files (lazily-loaded controllers/services/configs) aren't in
+    // the graph at boot. We explicitly add the server source dirs so every
+    // server-graph edit is observed, then filter events to the server graph.
+    //
+    // We react to `change`/`unlink` only — NOT `add`. chokidar emits `add` for
+    // every pre-existing file during its initial scan after `watcher.add()`,
+    // which would otherwise trigger a spurious reload at boot.
+    vite.watcher.add([srcDir, configDir]);
+    vite.watcher.on('change', onWatchEvent);
+    vite.watcher.on('unlink', onWatchEvent);
   } catch (err) {
     const e = err as Error;
     logger.error(`[vite-server] Failed to boot Strapi: ${e.message}`);

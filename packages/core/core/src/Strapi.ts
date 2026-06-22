@@ -57,10 +57,17 @@ class Strapi extends Container implements Core.Strapi {
 
   importModule?: (id: string) => Promise<unknown>;
 
+  /**
+   * Experimental Vite server path: in-process reload hook. When set, the
+   * `reload` service drives this instead of signalling a cluster re-fork.
+   */
+  onReload?: () => void | Promise<void>;
+
   constructor(opts: StrapiOptions) {
     super();
 
     this.importModule = opts.importModule;
+    this.onReload = opts.onReload;
     this.internal_config = loadConfiguration(opts);
 
     this.registerInternalServices();
@@ -310,7 +317,7 @@ class Strapi extends Container implements Core.Strapi {
           })
         );
       })
-      .add('reload', () => createReloader(this))
+      .add('reload', () => createReloader(this, { onReload: this.onReload }))
       .add('content-source-maps', () => createContentSourceMapsService(this));
   }
 
@@ -607,6 +614,11 @@ export interface StrapiOptions {
   autoReload?: boolean;
   serveAdminPanel?: boolean;
   importModule?: (id: string) => Promise<unknown>;
+  /**
+   * Experimental: in-process reload hook for the Vite server path. When set, the
+   * `reload` service calls this instead of signalling a cluster re-fork.
+   */
+  onReload?: () => void | Promise<void>;
 }
 
 export default Strapi;

@@ -23,10 +23,16 @@ export interface CreateStrapiAppOptions {
   importModule: (id: string) => Promise<unknown>;
   /** Serve the prebuilt admin panel (off by default in the source-only path). */
   serveAdminPanel?: boolean;
+  /**
+   * In-process reload hook (experimental). Threaded to the `reload` service so a
+   * Strapi-internal reload trigger (e.g. a content-type change) re-boots the app
+   * in the same process instead of signalling a cluster re-fork.
+   */
+  onReload?: () => void | Promise<void>;
 }
 
 export async function createStrapiApp(opts: CreateStrapiAppOptions): Promise<Core.Strapi> {
-  const { cwd, importModule, serveAdminPanel = false } = opts;
+  const { cwd, importModule, serveAdminPanel = false, onReload } = opts;
 
   // distDir === appDir: in the source-only dev path there is no compiled output,
   // so Strapi's `dirs.dist.*` point straight at the app source (src/, config/, …).
@@ -37,6 +43,7 @@ export async function createStrapiApp(opts: CreateStrapiAppOptions): Promise<Cor
     autoReload: true,
     serveAdminPanel,
     importModule,
+    onReload,
   });
 
   return app;
