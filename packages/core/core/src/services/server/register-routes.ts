@@ -3,34 +3,33 @@ import type { Core } from '@strapi/types';
 import { registerOpenAPIRoute } from './openapi';
 
 /**
- * Route definitions from plugins and the admin (e.g. `@strapi/admin`'s
+ * Route definitions from `@strapi/*` plugins and the admin (e.g. `@strapi/admin`'s
  * `export default [{ path: '/init', … }]`) are MODULE-LEVEL singletons loaded
- * once via native `require`. Route registration mutates routes in place
- * (`generateRouteScope` → `config`, `route.info`, and
- * `applyExtraParamsToRoutes` → `route.request`). In the normal cluster-fork dev
- * flow each boot is a fresh process, so mutating the singleton is harmless.
+ * once via native `require`. Route registration mutates routes IN PLACE on the
+ * source arrays (`strapi.admin.routes`, `strapi.plugins[*].routes`,
+ * `strapi.apis[*].routes`): it sets `route.info`, injects `config.auth.scope`
+ * (via `generateRouteScope`), and merges extra request params (via
+ * `applyExtraParamsToRoutes`). Several DEFAULT-PATH consumers READ those
+ * mutations back off the source arrays AFTER registration:
  *
- * Under the experimental in-process Vite reload, the SAME process re-registers
- * routes on every reload. Mutating the singletons there is a bug: the second
- * boot sees routes already carrying the first boot's mutations, and
- * `applyExtraParamsToRoutes` then throws `param "…" already exists on route`.
+ *  - `content-api.getRoutesMap()` → admin `GET /content-api/routes`
+ *    (API-token permissions UI), via `route.info.type === 'content-api'`;
+ *  - `users-permissions` `getRoutes()` → the Roles permission screen, same tag;
+ *  - the OpenAPI generator's `is-of-type` rule (opt-in).
  *
- * We defend by registering a per-boot shallow clone of each route, with its
- * mutated-in-place sub-objects (`config`, `request`, `info`) cloned too, so the
- * source singleton stays pristine across boots. Zod schemas inside `request`
- * are NOT mutated in place by the merge helpers (they build new `z.object`s), so
- * a shallow clone of `request` is sufficient and we avoid cloning schema class
- * instances.
+ * Registration MUST therefore mutate the source objects in place — cloning would
+ * leave the source pristine and break every one of those consumers.
+ *
+ * Under the experimental in-process Vite reload the SAME process re-registers
+ * these persistent singletons on every reload. Re-registration is made safe by
+ * keeping every mutation IDEMPOTENT:
+ *   - `route.info = {…}` is a full reassignment (idempotent);
+ *   - `generateRouteScope`'s `_.defaultsDeep(config.auth.scope, …)` only fills
+ *     missing keys (idempotent);
+ *   - `applyExtraParamsToRoutes` skips params it has already merged onto a route
+ *     (idempotent — see content-api's APPLIED_EXTRA_PARAMS marker), so the
+ *     second pass no longer throws `param "…" already exists on route`.
  */
-const cloneRouteForRegistration = <T extends Core.RouteInput>(route: T): T => ({
-  ...route,
-  ...(route.config ? { config: _.cloneDeep(route.config) } : {}),
-  ...(route.request ? { request: { ...route.request } } : {}),
-  ...(route.info ? { info: { ...route.info } } : {}),
-});
-
-const cloneRoutesForRegistration = <T extends Core.RouteInput>(routes: T[]): T[] =>
-  routes.map((route) => cloneRouteForRegistration(route));
 
 const createRouteScopeGenerator = (namespace: string) => (route: Core.RouteInput) => {
   const prefix = namespace.endsWith('::') ? namespace : `${namespace}.`;
@@ -70,14 +69,11 @@ const registerAdminRoutes = (strapi: Core.Strapi) => {
   _.forEach(strapi.admin.routes, (router) => {
     router.type = router.type || 'admin';
     router.prefix = router.prefix || `/admin`;
-    // Clone so the admin's module-level route singletons stay pristine across
-    // in-process reloads (see cloneRouteForRegistration).
-    const routes = cloneRoutesForRegistration(router.routes);
-    routes.forEach((route) => {
+    router.routes.forEach((route) => {
       generateRouteScope(route);
       route.info = { pluginName: 'admin' };
     });
-    strapi.server.routes({ ...router, routes });
+    strapi.server.routes(router);
   });
 };
 
@@ -92,19 +88,16 @@ const registerPluginRoutes = (strapi: Core.Strapi) => {
     const generateRouteScope = createRouteScopeGenerator(`plugin::${pluginName}`);
 
     if (Array.isArray(plugin.routes)) {
-      // Clone so the plugin's module-level route singletons stay pristine across
-      // in-process reloads (see cloneRouteForRegistration).
-      const routes = cloneRoutesForRegistration(plugin.routes);
-      routes.forEach((route) => {
+      plugin.routes.forEach((route) => {
         generateRouteScope(route);
         route.info = { pluginName };
       });
-      strapi.contentAPI.applyExtraParamsToRoutes(routes);
+      strapi.contentAPI.applyExtraParamsToRoutes(plugin.routes);
 
       strapi.server.routes({
         type: 'admin',
         prefix: `/${pluginName}`,
-        routes,
+        routes: plugin.routes,
       });
     } else {
       // Instantiate function-like routers
@@ -114,14 +107,13 @@ const registerPluginRoutes = (strapi: Core.Strapi) => {
       _.forEach(plugin.routes, (router) => {
         router.type = router.type ?? 'admin';
         router.prefix = router.prefix ?? `/${pluginName}`;
-        const routes = cloneRoutesForRegistration(router.routes ?? []);
-        routes.forEach((route) => {
+        router.routes.forEach((route) => {
           generateRouteScope(route);
           route.info = { pluginName };
         });
-        strapi.contentAPI.applyExtraParamsToRoutes(routes);
+        strapi.contentAPI.applyExtraParamsToRoutes(router.routes ?? []);
 
-        strapi.server.routes({ ...router, routes });
+        strapi.server.routes(router);
       });
     }
   }
@@ -143,17 +135,13 @@ const registerAPIRoutes = (strapi: Core.Strapi) => {
       // TODO: remove once auth setup
       // pass meta down to compose endpoint
       router.type = 'content-api';
-      // Clone so route singletons (e.g. the core router's memoized `routes`
-      // getter) stay pristine across in-process reloads (see
-      // cloneRouteForRegistration).
-      const routes = cloneRoutesForRegistration(router.routes ?? []);
-      routes.forEach((route) => {
+      router.routes?.forEach((route) => {
         generateRouteScope(route);
         route.info = { apiName };
       });
-      strapi.contentAPI.applyExtraParamsToRoutes(routes);
+      strapi.contentAPI.applyExtraParamsToRoutes(router.routes ?? []);
 
-      return strapi.server.routes({ ...router, routes });
+      return strapi.server.routes(router);
     });
   }
 };
