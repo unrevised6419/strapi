@@ -2,8 +2,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    "noEmit": false
+    "noEmit": false,
+    "paths": {
+      "@vitejs/plugin-react-swc": ["./types/plugin-react-swc.d.ts"]
+    }
   },
-  "include": ["src"],
+  "include": ["src", "types"],
   "exclude": ["node_modules", "**/__tests__/**"]
 }

@@ -1,6 +1,17 @@
 import type { Core } from '@strapi/types';
 
-export const createReloader = (strapi: Core.Strapi) => {
+export interface ReloaderOptions {
+  /**
+   * In-process reload hook (experimental Vite server path). When set, `reload()`
+   * calls this instead of signalling the cluster primary via `process.send`.
+   * The hook is responsible for tearing down and re-booting Strapi in the same
+   * process (no cluster fork). When omitted, the reloader keeps its byte-for-byte
+   * original cluster behaviour.
+   */
+  onReload?: () => void | Promise<void>;
+}
+
+export const createReloader = (strapi: Core.Strapi, opts: ReloaderOptions = {}) => {
   const state = {
     shouldReload: 0,
     isWatching: true,
@@ -11,6 +22,13 @@ export const createReloader = (strapi: Core.Strapi) => {
       // Reset the reloading state
       state.shouldReload -= 1;
       reload.isReloading = false;
+      return;
+    }
+
+    // In-process path (experimental Vite server): reload Strapi without a
+    // cluster fork. Fire-and-forget — the hook owns its own error handling.
+    if (opts.onReload) {
+      Promise.resolve(opts.onReload()).catch(() => {});
       return;
     }
 

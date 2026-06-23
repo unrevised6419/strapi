@@ -46,6 +46,14 @@ interface DevelopOptions extends CLIContext {
    * @default true
    */
   installDeps?: boolean;
+  /**
+   * When true, run the backend through the Vite server environment instead of
+   * the default tsc + cluster path. Feature-flagged; off by default.
+   *
+   * @default false
+   * @experimental
+   */
+  experimentalViteServer?: boolean;
 }
 
 // This method removes all non-admin build files from the dist directory
@@ -90,17 +98,24 @@ const cleanupDistDirectory = async ({
   cleaningSpinner?.succeed();
 };
 
-const develop = async ({
-  cwd,
-  polling,
-  logger,
-  tsconfig,
-  watchAdmin,
-  buildAdmin,
-  installDeps = true,
-  ...options
-}: DevelopOptions) => {
+const develop = async (developOptions: DevelopOptions) => {
+  const {
+    cwd,
+    polling,
+    logger,
+    tsconfig,
+    watchAdmin,
+    buildAdmin,
+    installDeps = true,
+    experimentalViteServer,
+    ...options
+  } = developOptions;
   const timer = getTimer();
+
+  if (experimentalViteServer) {
+    const { developViteServer } = await import('./vite/dev-server');
+    return developViteServer(developOptions);
+  }
 
   if (cluster.isPrimary) {
     const shouldContinue = await handleAdminDependencies({

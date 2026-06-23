@@ -131,13 +131,15 @@ export default async function loadPlugins(strapi: Core.Strapi) {
       continue;
     }
 
-    const pluginServer = loadConfigFile(serverEntrypointPath);
+    const pluginServer = (await (strapi.importModule
+      ? loadConfigFile(serverEntrypointPath, { importModule: strapi.importModule })
+      : Promise.resolve(loadConfigFile(serverEntrypointPath)))) as Partial<Plugin.LoadedPlugin>;
     plugins[pluginName] = {
       ...defaultPlugin,
       ...pluginServer,
       contentTypes: formatContentTypes(pluginName, pluginServer.contentTypes ?? {}),
       config: defaults(defaultPlugin.config, pluginServer.config),
-      routes: pluginServer.routes ?? defaultPlugin.routes,
+      routes: (pluginServer.routes ?? defaultPlugin.routes) as Plugin.LoadedPlugin['routes'],
     };
   }
 

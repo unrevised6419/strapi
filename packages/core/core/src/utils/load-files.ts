@@ -2,19 +2,36 @@ import path from 'path';
 import _ from 'lodash';
 import fse from 'fs-extra';
 
-import { importDefault } from '@strapi/utils';
+import { importDefault, unwrapModule } from '@strapi/utils';
 import { glob } from 'glob';
 import { filePathToPropPath } from './filepath-to-prop-path';
+
+type ImportModule = (id: string) => Promise<unknown>;
 
 /**
  * Returns an Object build from a list of files matching a glob pattern in a directory
  * It builds a tree structure resembling the folder structure in dir
+ *
+ * When `importModule` is provided (experimental Vite source-only boot), non-JSON
+ * source files are loaded through the runner (async) instead of the sync
+ * `requireFn`. Off-path (no `importModule`) the behaviour is byte-for-byte the
+ * original sync `requireFn`/`importDefault`.
  */
 export const loadFiles = async <T extends object>(
   dir: string,
   pattern: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  { requireFn = importDefault, shouldUseFileNameAsKey = (_: any) => true, globArgs = {} } = {}
+  {
+    requireFn = importDefault,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    shouldUseFileNameAsKey = (_: any) => true,
+    globArgs = {},
+    importModule,
+  }: {
+    requireFn?: (modName: string) => unknown;
+    shouldUseFileNameAsKey?: (file: string) => boolean;
+    globArgs?: Record<string, unknown>;
+    importModule?: ImportModule;
+  } = {}
 ): Promise<T> => {
   const root = {};
   const files = await glob(pattern, { cwd: dir, ...globArgs });
@@ -28,6 +45,8 @@ export const loadFiles = async <T extends object>(
 
     if (path.extname(absolutePath) === '.json') {
       mod = await fse.readJson(absolutePath);
+    } else if (importModule) {
+      mod = unwrapModule(await importModule(absolutePath));
     } else {
       mod = requireFn(absolutePath);
     }

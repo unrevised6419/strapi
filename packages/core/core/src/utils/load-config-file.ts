@@ -33,7 +33,25 @@ const loadJSONFile = (file: string) => {
   }
 };
 
-export const loadConfigFile = (file: string) => {
+export function loadConfigFile(file: string): unknown;
+export function loadConfigFile(
+  file: string,
+  opts: { importModule: (id: string) => Promise<unknown> }
+): Promise<unknown>;
+export function loadConfigFile(
+  file: string,
+  opts?: { importModule?: (id: string) => Promise<unknown> }
+): unknown | Promise<unknown> {
+  if (opts?.importModule) {
+    return (async () => {
+      const mod = await opts.importModule!(file);
+      const val = (mod as { default?: unknown })?.default ?? mod;
+      return typeof val === 'function'
+        ? (val as (a: { env: typeof env }) => unknown)({ env })
+        : val;
+    })();
+  }
+
   const ext = path.extname(file);
 
   switch (ext) {
@@ -44,4 +62,4 @@ export const loadConfigFile = (file: string) => {
     default:
       return {};
   }
-};
+}
