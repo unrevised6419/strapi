@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import { objects, template } from '@strapi/utils';
 
+import type { Providers } from '@strapi/types';
 import type {
   EmailConfig,
   EmailOptions,
@@ -13,7 +14,9 @@ const { createStrictInterpolationRegExp } = template;
 
 const getProviderSettings = (): EmailConfig => strapi.config.get('plugin::email');
 
-const send = async (options: SendOptions) => strapi.plugin('email').provider.send(options);
+const getProvider = (): Providers.Email.Provider => strapi.plugin('email').provider;
+
+const send = async (options: SendOptions) => getProvider().send(options);
 
 /**
  * fill subject, text and html using lodash template
@@ -48,13 +51,15 @@ const sendTemplatedEmail = (
             })(data),
           })
         : compiled,
-    {}
+    // The check above ensures that the template has every attribute
+    {} as Pick<EmailTemplate, 'subject' | 'text' | 'html'>
   );
 
-  return strapi.plugin('email').provider.send({ ...emailOptions, ...templatedAttributes });
+  return getProvider().send({ ...emailOptions, ...templatedAttributes });
 };
 
 const emailService = () => ({
+  getProvider,
   getProviderSettings,
   send,
   sendTemplatedEmail,

@@ -1,19 +1,15 @@
-import sendgrid, { MailDataRequired } from '@sendgrid/mail';
-
-interface Settings {
-  defaultFrom: string;
-  defaultReplyTo: string;
-}
+import sendgrid, { type MailDataRequired } from '@sendgrid/mail';
+import type { Providers } from '@strapi/types';
 
 interface SendOptions {
   from?: string;
   to: string;
-  cc: string;
-  bcc: string;
+  cc?: string;
+  bcc?: string;
   replyTo?: string;
   subject: string;
   text: string;
-  html: string;
+  html?: string;
   [key: string]: unknown;
 }
 
@@ -23,7 +19,7 @@ interface ProviderOptions {
 }
 
 export default {
-  init(providerOptions: ProviderOptions, settings: Settings) {
+  init(providerOptions: ProviderOptions, settings: Providers.Email.Settings) {
     sendgrid.setApiKey(providerOptions.apiKey);
 
     if (providerOptions.region) {
@@ -58,4 +54,4 @@ export default {
       },
     };
   },
-};
+} satisfies Providers.Email.Factory<ProviderOptions>;
