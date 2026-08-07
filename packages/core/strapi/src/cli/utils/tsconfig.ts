@@ -50,5 +50,20 @@ const loadTsConfig = ({
   };
 };
 
-export { loadTsConfig };
+// Lazy: defer `loadTsConfig` (which loads `typescript`) until first read
+let lazyTsConfig: TsConfig | undefined;
+let tsConfigLoaded = false;
+const lazyLoadTsConfig = (params: {
+  cwd: string;
+  path: string;
+  logger: Logger;
+}): TsConfig | undefined => {
+  if (!tsConfigLoaded) {
+    tsConfigLoaded = true;
+    lazyTsConfig = loadTsConfig(params);
+  }
+  return lazyTsConfig;
+};
+
+export { loadTsConfig, lazyLoadTsConfig };
 export type { TsConfig };

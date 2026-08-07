@@ -4,9 +4,9 @@ import type { ConfigOptions } from './compilers/basic';
 
 export const compile = async (
   srcDir: string,
-  { configOptions = {} }: { configOptions?: ConfigOptions } = {}
+  { configOptions = {}, tsConfigPath }: { configOptions?: ConfigOptions; tsConfigPath?: string }
 ): Promise<void> => {
-  const configPath = getConfigPath(srcDir);
+  const configPath = getConfigPath(srcDir, { filename: tsConfigPath });
 
   compilers.basic.run(configPath as string, configOptions);
 };

@@ -11,6 +11,7 @@ import { getStrapiAdminEnvVars, loadEnv } from './core/env';
 import { PluginMeta, getEnabledPlugins, getMapOfPluginsWithAdmin } from './core/plugins';
 import { AppFile, loadUserAppFile } from './core/admin-customisations';
 import type { BaseContext } from './types';
+import { lazyLoadTsConfig } from '../cli/utils/tsconfig';
 
 interface BaseOptions {
   stats?: boolean;
@@ -55,10 +56,12 @@ const DEFAULT_BROWSERSLIST = [
 const createBuildContext = async <TOptions extends BaseOptions>({
   cwd,
   logger,
-  tsconfig,
+  tsConfigPath,
   strapi,
   options = {} as TOptions,
 }: CreateBuildContextArgs<TOptions>): Promise<BuildContext<TOptions>> => {
+  const tsconfig = lazyLoadTsConfig({ cwd, logger, path: tsConfigPath });
+
   /**
    * If you make a new strapi instance when one already exists,
    * you will overwrite the global and the app will _most likely_

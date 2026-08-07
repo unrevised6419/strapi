@@ -4,6 +4,7 @@ import { handleAdminDependencies } from './core/ensure-admin-dependencies';
 import { getTimer, prettyTime } from './core/timer';
 import { createBuildContext } from './create-build-context';
 import { writeStaticClientFiles } from './staticFiles';
+import { lazyLoadTsConfig } from '../cli/utils/tsconfig';
 
 interface BuildOptions extends CLIContext {
   /**
@@ -39,7 +40,13 @@ interface BuildOptions extends CLIContext {
  *
  * @description Builds the admin panel of the strapi application.
  */
-const build = async ({ logger, cwd, tsconfig, installDeps = false, ...options }: BuildOptions) => {
+const build = async ({
+  logger,
+  cwd,
+  tsConfigPath,
+  installDeps = false,
+  ...options
+}: BuildOptions) => {
   const timer = getTimer();
 
   const shouldContinue = await handleAdminDependencies({
@@ -52,12 +59,17 @@ const build = async ({ logger, cwd, tsconfig, installDeps = false, ...options }:
     return;
   }
 
+  const tsconfig = lazyLoadTsConfig({ cwd, logger, path: tsConfigPath });
+
   if (tsconfig?.config) {
     timer.start('compilingTS');
     const compilingTsSpinner = logger.spinner(`Compiling TS`).start();
 
     try {
-      await tsUtils.compile(cwd, { configOptions: { ignoreDiagnostics: false } });
+      await tsUtils.compile(cwd, {
+        tsConfigPath,
+        configOptions: { ignoreDiagnostics: false },
+      });
     } catch {
       // Match previous compiler behavior (process.exit inside basic.run).
       process.exit(1);
@@ -75,7 +87,7 @@ const build = async ({ logger, cwd, tsconfig, installDeps = false, ...options }:
   const ctx = await createBuildContext({
     cwd,
     logger,
-    tsconfig,
+    tsConfigPath,
     options,
   });
 

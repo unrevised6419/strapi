@@ -2,6 +2,7 @@ import type { Core } from '@strapi/types';
 
 import type { CLIContext } from '../cli/types';
 import { BuildOptions } from './build';
+import { TsConfig } from '../cli/utils/tsconfig';
 
 interface BaseContext {
   /**
@@ -55,7 +56,7 @@ interface BaseContext {
    * The browserslist target either loaded from the user's workspace or falling back to the default
    */
   target: string[];
-  tsconfig?: CLIContext['tsconfig'];
+  tsconfig?: TsConfig;
 }
 
 export type { BaseContext };
