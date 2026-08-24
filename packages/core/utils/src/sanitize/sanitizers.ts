@@ -1,4 +1,5 @@
-import { curry, isEmpty, isNil, isPlainObject } from 'lodash/fp';
+import { isEmpty, isNil, isPlainObject } from 'lodash';
+import { curry } from 'lodash/fp';
 
 import { pipe as pipeAsync } from '../async';
 import traverseEntity from '../traverse-entity';

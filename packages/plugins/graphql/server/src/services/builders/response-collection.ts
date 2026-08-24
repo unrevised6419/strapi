@@ -1,5 +1,6 @@
 import { objectType, nonNull } from 'nexus';
-import { defaultTo, prop, pipe, identity } from 'lodash/fp';
+import { identity } from 'lodash';
+import { defaultTo, prop, pipe } from 'lodash/fp';
 import type { Schema } from '@strapi/types';
 import type { Context } from '../types';
 

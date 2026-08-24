@@ -1,8 +1,8 @@
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import * as yup from 'yup';
-import _ from 'lodash';
-import { isNumber, isInteger, get } from 'lodash/fp';
+import _, { isNumber, isInteger } from 'lodash';
+import { get } from 'lodash/fp';
 import { strings } from './primitives';
 import { printValue } from './print-value';
 

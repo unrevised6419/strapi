@@ -1,6 +1,7 @@
 'use strict';
 
-const { isFunction, isNil, prop } = require('lodash/fp');
+const { prop } = require('lodash/fp');
+const { isFunction, isNil } = require('lodash');
 const { createStrapiInstance } = require('./strapi');
 const componentData = require('../../core/core/src/services/document-service/components');
 

@@ -1,4 +1,4 @@
-import { isNil } from 'lodash/fp';
+import { isNil } from 'lodash';
 import { errors } from '@strapi/utils';
 import { getService } from '../utils';
 import constants from './constants';

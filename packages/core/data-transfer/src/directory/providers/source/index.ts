@@ -3,7 +3,8 @@ import type { Readable } from 'stream';
 import { PassThrough } from 'stream';
 
 import fs from 'fs-extra';
-import { isEmpty, keyBy } from 'lodash/fp';
+import { isEmpty } from 'lodash';
+import { keyBy } from 'lodash/fp';
 import { chain } from 'stream-chain';
 import { parser } from 'stream-json/jsonl/Parser';
 import type { Struct } from '@strapi/types';

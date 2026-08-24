@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { map, isEmpty } from 'lodash/fp';
+import { isEmpty } from 'lodash';
+import { map } from 'lodash/fp';
 import type { Knex } from 'knex';
 
 import {

@@ -1,4 +1,5 @@
-import { propEq, identity } from 'lodash/fp';
+import { identity } from 'lodash';
+import { propEq } from 'lodash/fp';
 import { errors } from '@strapi/utils';
 import type { Core } from '@strapi/types';
 

@@ -1,4 +1,5 @@
-import _, { snakeCase } from 'lodash/fp';
+import _ from 'lodash/fp';
+import { snakeCase } from 'lodash';
 
 import { identifiers } from '../utils/identifiers';
 import type { Meta, Metadata } from './metadata';

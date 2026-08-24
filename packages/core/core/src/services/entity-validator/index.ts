@@ -3,8 +3,8 @@
  * Module that will validate input data for entity creation or edition
  */
 
-import { uniqBy, castArray, isNil, mergeWith } from 'lodash';
-import { has, prop, isObject, isEmpty } from 'lodash/fp';
+import { uniqBy, castArray, isNil, mergeWith, isObject, isEmpty } from 'lodash';
+import { has, prop } from 'lodash/fp';
 import jsonLogic from 'json-logic-js';
 import * as strapiUtils from '@strapi/utils';
 import type { Modules, UID, Struct, Schema } from '@strapi/types';

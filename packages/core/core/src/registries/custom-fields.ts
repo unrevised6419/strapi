@@ -1,4 +1,5 @@
-import { has, isPlainObject } from 'lodash/fp';
+import { isPlainObject } from 'lodash';
+import { has } from 'lodash/fp';
 
 import type { Core, Modules } from '@strapi/types';
 

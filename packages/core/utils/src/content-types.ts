@@ -1,5 +1,5 @@
-import _ from 'lodash';
-import { has, getOr, union, snakeCase } from 'lodash/fp';
+import _, { snakeCase } from 'lodash';
+import { has, getOr, union } from 'lodash/fp';
 import type {
   Model,
   Kind,

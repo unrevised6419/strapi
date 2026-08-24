@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */ // allow __type
-import { curry, groupBy, pipe, mapValues, map, isEmpty } from 'lodash/fp';
+import { isEmpty } from 'lodash';
+import { curry, groupBy, pipe, mapValues, map } from 'lodash/fp';
 import type { Knex } from 'knex';
 
 import { createQueryBuilder } from '../query';

@@ -1,7 +1,8 @@
 import type { Core, Modules, UID } from '@strapi/types';
 import { contentTypes } from '@strapi/utils';
 
-import { omit, castArray } from 'lodash/fp';
+import { castArray } from 'lodash';
+import { omit } from 'lodash/fp';
 
 import { getService } from '../utils';
 import { FIELDS_TO_IGNORE, HISTORY_VERSION_UID } from '../constants';

@@ -1,6 +1,6 @@
 import { yup } from '@strapi/utils';
-import _ from 'lodash';
-import { isEmpty, has, isNil } from 'lodash/fp';
+import _, { isEmpty, isNil } from 'lodash';
+import { has } from 'lodash/fp';
 import { getService } from '../utils';
 import actionDomain, { type Action } from '../domain/action';
 import { checkFieldsAreCorrectlyNested, checkFieldsDontHaveDuplicates } from './common-functions';

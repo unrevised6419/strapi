@@ -1,5 +1,6 @@
 import type { Core } from '@strapi/types';
-import { set, isString, map, get } from 'lodash/fp';
+import { isString } from 'lodash';
+import { set, map, get } from 'lodash/fp';
 import { errors } from '@strapi/utils';
 import { WORKFLOW_MODEL_UID, WORKFLOW_POPULATE } from '../constants/workflows';
 import { getService } from '../utils';

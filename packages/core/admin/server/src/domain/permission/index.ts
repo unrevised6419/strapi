@@ -1,7 +1,8 @@
 import type { Utils } from '@strapi/types';
 
 import { providerFactory } from '@strapi/utils';
-import { pipe, set, pick, eq, omit, remove, get, uniq, map, curry, merge } from 'lodash/fp';
+import { uniq } from 'lodash';
+import { pipe, set, pick, eq, omit, remove, get, map, curry, merge } from 'lodash/fp';
 import { Permission } from '../../../../shared/contracts/shared';
 import { SanitizedPermission } from '../../../../shared/contracts/roles';
 

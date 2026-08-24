@@ -1,4 +1,5 @@
-import { isNil, prop, xor, eq, differenceWith } from 'lodash/fp';
+import { isNil } from 'lodash';
+import { prop, xor, eq, differenceWith } from 'lodash/fp';
 import pmap from 'p-map';
 import type { Data } from '@strapi/types';
 import { getService } from '../../utils';

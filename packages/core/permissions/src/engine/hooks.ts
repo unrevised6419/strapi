@@ -1,4 +1,5 @@
-import { cloneDeep, has } from 'lodash/fp';
+import { cloneDeep } from 'lodash';
+import { has } from 'lodash/fp';
 import { hooks } from '@strapi/utils';
 
 import * as domain from '../domain';

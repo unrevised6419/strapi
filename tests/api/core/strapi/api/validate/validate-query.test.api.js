@@ -1,6 +1,7 @@
 'use strict';
 
-const { values, zip, symmetricDifference } = require('lodash/fp');
+const { zip, symmetricDifference } = require('lodash/fp');
+const { values } = require('lodash');
 
 const { createTestBuilder } = require('api-tests/builder');
 const { createStrapiInstance } = require('api-tests/strapi');

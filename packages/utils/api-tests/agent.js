@@ -1,6 +1,7 @@
 'use strict';
 
-const { clone, has, concat, isNil } = require('lodash/fp');
+const { has, concat } = require('lodash/fp');
+const { clone, isNil } = require('lodash');
 const qs = require('qs');
 const request = require('supertest');
 const { createUtils } = require('./utils');

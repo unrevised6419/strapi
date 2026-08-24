@@ -1,4 +1,5 @@
-import { has, propEq, isNil, isDate, isObject } from 'lodash/fp';
+import { isNil, isDate, isObject } from 'lodash';
+import { has, propEq } from 'lodash/fp';
 import type { Struct } from '@strapi/types';
 import type { Context } from '../../types';
 

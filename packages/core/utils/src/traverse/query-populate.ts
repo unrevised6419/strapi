@@ -1,17 +1,15 @@
 import {
-  curry,
   isString,
   isEmpty,
-  split,
   isObject,
-  trim,
   constant,
   isNil,
   identity,
   cloneDeep,
-  join,
   first,
-} from 'lodash/fp';
+  trim,
+} from 'lodash';
+import { curry, split, join } from 'lodash/fp';
 
 import traverseFactory, { type Parent } from './factory';
 import { Attribute } from '../types';

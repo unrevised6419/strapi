@@ -5,8 +5,8 @@
  * You can read more here: https://docs.strapi.io/developer-docs/latest/developer-resources/database-apis-reference/rest-api.html#filters
  */
 
-import _ from 'lodash';
-import { cloneDeep, get, isEmpty, isInteger, isNil, isObject, isString, toNumber } from 'lodash/fp';
+import _, { cloneDeep, isEmpty, isInteger, isNil, isObject, isString, toNumber } from 'lodash';
+import { get } from 'lodash/fp';
 import {
   constants,
   hasDraftAndPublish,

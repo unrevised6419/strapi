@@ -1,4 +1,5 @@
-import { curry, isObject, isEmpty, isNil, cloneDeep, omit } from 'lodash/fp';
+import { isObject, isEmpty, isNil, cloneDeep } from 'lodash';
+import { curry, omit } from 'lodash/fp';
 
 import { isScalarAttribute } from '../content-types';
 import { isOperator } from '../operators';

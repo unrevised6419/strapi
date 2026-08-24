@@ -1,4 +1,4 @@
-import { isUndefined } from 'lodash/fp';
+import { isUndefined } from 'lodash';
 import { yup, validateYupSchema } from '@strapi/utils';
 import validators from './common-validators';
 

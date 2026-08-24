@@ -1,4 +1,5 @@
-import { camelCase, upperFirst, lowerFirst, pipe, get } from 'lodash/fp';
+import { camelCase, upperFirst, lowerFirst } from 'lodash';
+import { pipe, get } from 'lodash/fp';
 import { singular } from 'pluralize';
 import { errors } from '@strapi/utils';
 import type { Struct, Schema } from '@strapi/types';

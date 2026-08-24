@@ -1,7 +1,7 @@
 import type { Context } from 'koa';
 
-import _ from 'lodash';
-import { pick, isNil } from 'lodash/fp';
+import _, { isNil } from 'lodash';
+import { pick } from 'lodash/fp';
 import { errors } from '@strapi/utils';
 import { validateUserCreationInput } from '../validation/user';
 import { validateUserUpdateInput } from '../../../../server/src/validation/user';

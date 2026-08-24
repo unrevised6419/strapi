@@ -1,5 +1,6 @@
 import type { Struct } from '@strapi/types';
-import { isObject, reject } from 'lodash/fp';
+import { isObject } from 'lodash';
+import { reject } from 'lodash/fp';
 import type { Diff } from '../../../utils/json';
 import * as utils from '../../../utils';
 

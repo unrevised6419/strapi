@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { castArray, isPlainObject } from 'lodash/fp';
+import { castArray, isPlainObject } from 'lodash';
 import type { Knex } from 'knex';
 
 import { isOperator, isOperatorOfType } from '@strapi/utils';

@@ -1,5 +1,6 @@
 import type { Core } from '@strapi/types';
-import { differenceWith, isEqual } from 'lodash/fp';
+import { isEqual } from 'lodash';
+import { differenceWith } from 'lodash/fp';
 
 export interface PersistedTable {
   name: string;

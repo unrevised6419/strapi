@@ -1,4 +1,5 @@
-import { map, values, sumBy, pipe, flatMap } from 'lodash/fp';
+import { values } from 'lodash';
+import { map, sumBy, pipe, flatMap } from 'lodash/fp';
 import type { Schema, UID } from '@strapi/types';
 
 const getNumberOfConditionalFields = () => {

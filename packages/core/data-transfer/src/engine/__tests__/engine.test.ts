@@ -1,7 +1,8 @@
 import path, { posix, win32 } from 'path';
 import os from 'os';
 import fs from 'fs-extra';
-import { cloneDeep, get, set } from 'lodash/fp';
+import { cloneDeep } from 'lodash';
+import { get, set } from 'lodash/fp';
 import { Readable, Writable } from 'stream-chain';
 import { pipeline } from 'stream/promises';
 import type { Struct } from '@strapi/types';

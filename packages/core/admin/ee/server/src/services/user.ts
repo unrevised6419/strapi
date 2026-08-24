@@ -1,5 +1,5 @@
-import _ from 'lodash';
-import { pipe, map, castArray, toNumber } from 'lodash/fp';
+import _, { castArray, toNumber } from 'lodash';
+import { pipe, map } from 'lodash/fp';
 import { arrays, errors } from '@strapi/utils';
 import { hasSuperAdminRole } from '../../../../server/src/domain/user';
 import constants from '../../../../server/src/services/constants';

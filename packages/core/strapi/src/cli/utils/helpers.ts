@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import chalk from 'chalk';
-import { has, isString } from 'lodash/fp';
+import { isString } from 'lodash';
+import { has } from 'lodash/fp';
 import boxen from 'boxen';
 import type { Command } from 'commander';
 import { getInquirer } from './get-inquirer';

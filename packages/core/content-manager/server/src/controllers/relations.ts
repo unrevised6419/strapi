@@ -1,4 +1,5 @@
-import { prop, uniq, uniqBy, concat, flow, isEmpty } from 'lodash/fp';
+import { uniq, isEmpty } from 'lodash';
+import { prop, uniqBy, concat, flow } from 'lodash/fp';
 
 import { isOperatorOfType, contentTypes, relations, errors } from '@strapi/utils';
 import type { Data, Modules, UID } from '@strapi/types';

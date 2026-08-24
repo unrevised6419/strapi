@@ -2,8 +2,8 @@ import type { Context } from 'koa';
 
 import path from 'path';
 
-import { map, values, sumBy, pipe, flatMap, propEq } from 'lodash/fp';
-import _ from 'lodash';
+import { map, sumBy, pipe, flatMap, propEq } from 'lodash/fp';
+import _, { values } from 'lodash';
 import { exists } from 'fs-extra';
 import { env } from '@strapi/utils';
 import {

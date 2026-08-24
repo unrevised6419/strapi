@@ -1,5 +1,6 @@
 import type { Core } from '@strapi/types';
-import { flow, map, sum, size, mean, max, defaultTo } from 'lodash/fp';
+import { sum, size, mean, max } from 'lodash';
+import { flow, map, defaultTo } from 'lodash/fp';
 import { add } from 'date-fns';
 import { getService } from '../../utils';
 

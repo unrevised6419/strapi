@@ -1,6 +1,7 @@
 import { detectSubjectType } from '@casl/ability';
 import { permittedFieldsOf } from '@casl/ability/extra';
-import { isEmpty, isNil, flatMap, some, prop } from 'lodash/fp';
+import { isEmpty, isNil } from 'lodash';
+import { flatMap, some, prop } from 'lodash/fp';
 
 import type { Ability } from '@casl/ability';
 

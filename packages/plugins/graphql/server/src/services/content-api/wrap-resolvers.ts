@@ -1,4 +1,5 @@
-import { get, getOr, isFunction, first, isNil } from 'lodash/fp';
+import { isFunction, first, isNil } from 'lodash';
+import { get, getOr } from 'lodash/fp';
 import {
   GraphQLObjectType,
   GraphQLResolveInfo,

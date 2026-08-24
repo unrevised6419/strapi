@@ -1,7 +1,5 @@
 import * as ts from 'typescript';
 import {
-  pipe,
-  replace,
   camelCase,
   upperFirst,
   isUndefined,
@@ -10,8 +8,8 @@ import {
   isNumber,
   isDate,
   isBoolean,
-  propEq,
-} from 'lodash/fp';
+} from 'lodash';
+import { pipe, replace, propEq } from 'lodash/fp';
 
 const { factory } = ts;
 

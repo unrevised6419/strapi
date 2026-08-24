@@ -1,4 +1,5 @@
-import { eq, remove, cloneDeep } from 'lodash/fp';
+import { cloneDeep } from 'lodash';
+import { eq, remove } from 'lodash/fp';
 
 export type Handler = (...args: any[]) => any;
 

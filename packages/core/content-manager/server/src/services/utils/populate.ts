@@ -1,4 +1,5 @@
-import { merge, isEmpty, set, propEq } from 'lodash/fp';
+import { isEmpty } from 'lodash';
+import { merge, set, propEq } from 'lodash/fp';
 import * as strapiUtils from '@strapi/utils';
 import type { UID, Schema, Modules } from '@strapi/types';
 import { getService } from '../../utils';

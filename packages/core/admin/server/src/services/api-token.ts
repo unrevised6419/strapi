@@ -1,17 +1,6 @@
 import crypto from 'crypto';
-import {
-  omit,
-  difference,
-  isNil,
-  isEmpty,
-  map,
-  uniq,
-  isNumber,
-  differenceWith,
-  isEqual,
-  pick,
-  prop,
-} from 'lodash/fp';
+import { isNil, isEmpty, uniq, isNumber, isEqual } from 'lodash';
+import { omit, difference, map, differenceWith, pick, prop } from 'lodash/fp';
 import type { Core, Data } from '@strapi/types';
 import { errors } from '@strapi/utils';
 import type { Ability } from '@casl/ability';

@@ -1,4 +1,5 @@
-import { pick, isEqual } from 'lodash/fp';
+import { isEqual } from 'lodash';
+import { pick } from 'lodash/fp';
 import type { Logger } from '@strapi/logger';
 import type { Core } from '@strapi/types';
 import { createStrapiFetch } from '../utils/fetch';
