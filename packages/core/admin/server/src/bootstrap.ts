@@ -1,4 +1,5 @@
-import { merge, map, difference, uniq } from 'lodash/fp';
+import { uniq } from 'lodash';
+import { merge, map, difference } from 'lodash/fp';
 import type { Core } from '@strapi/types';
 import { async } from '@strapi/utils';
 import { getService } from './utils';

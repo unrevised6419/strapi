@@ -1,4 +1,5 @@
-import { curry, isString, eq, trim, constant } from 'lodash/fp';
+import { isString, eq, constant, trim } from 'lodash';
+import { curry } from 'lodash/fp';
 
 import traverseFactory from './factory';
 

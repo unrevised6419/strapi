@@ -1,4 +1,4 @@
-import { isNil } from 'lodash/fp';
+import { isNil } from 'lodash';
 import { DEFAULT_LOCALE } from '../constants';
 import { getService, getCoreStore } from '../utils';
 

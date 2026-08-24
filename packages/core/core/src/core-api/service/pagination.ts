@@ -1,4 +1,5 @@
-import { omit, has, toNumber, isNil } from 'lodash/fp';
+import { toNumber, isNil } from 'lodash';
+import { omit, has } from 'lodash/fp';
 
 import { errors, pagination } from '@strapi/utils';
 

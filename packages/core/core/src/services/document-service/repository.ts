@@ -1,4 +1,5 @@
-import { omit, assoc, curry, isEmpty, pick } from 'lodash/fp';
+import { isEmpty } from 'lodash';
+import { omit, assoc, curry, pick } from 'lodash/fp';
 
 import {
   async,

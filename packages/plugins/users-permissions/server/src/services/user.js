@@ -11,7 +11,8 @@ const bcrypt = require('bcryptjs');
 const urlJoin = require('url-join');
 
 const { sanitize } = require('@strapi/utils');
-const { toNumber, getOr } = require('lodash/fp');
+const { getOr } = require('lodash/fp');
+const { toNumber } = require('lodash');
 const { getService } = require('../utils');
 
 const USER_MODEL_UID = 'plugin::users-permissions.user';

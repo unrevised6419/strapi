@@ -1,4 +1,4 @@
-import { toLower } from 'lodash/fp';
+import { toLower } from 'lodash';
 import { Strategy as LocalStrategy } from 'passport-local';
 import type { Core } from '@strapi/types';
 import { getService } from '../../utils';

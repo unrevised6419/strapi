@@ -1,4 +1,5 @@
-import { isNil, mapValues } from 'lodash/fp';
+import { isNil } from 'lodash';
+import { mapValues } from 'lodash/fp';
 
 import type { UID, Struct, Core } from '@strapi/types';
 import type { Configuration } from '../../../shared/contracts/content-types';

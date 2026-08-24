@@ -1,6 +1,7 @@
 /* eslint-disable no-template-curly-in-string */ // yup templates need to be in this format
 
-import { flatMap, getOr, has, snakeCase } from 'lodash/fp';
+import { snakeCase } from 'lodash';
+import { flatMap, getOr, has } from 'lodash/fp';
 import { yup, validateYupSchema } from '@strapi/utils';
 
 import type { Struct, Internal, UID } from '@strapi/types';

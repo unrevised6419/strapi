@@ -1,6 +1,7 @@
 'use strict';
 
-const { prop, difference, map, uniq } = require('lodash/fp');
+const { prop, difference, map } = require('lodash/fp');
+const { uniq } = require('lodash');
 const { createAuthRequest } = require('api-tests/request');
 const { createStrapiInstance } = require('api-tests/strapi');
 const { createTestBuilder } = require('api-tests/builder');

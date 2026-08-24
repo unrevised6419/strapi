@@ -1,6 +1,7 @@
 'use strict';
 
-const { isFunction, map } = require('lodash/fp');
+const { map } = require('lodash/fp');
+const { isFunction } = require('lodash');
 const modelsUtils = require('../models');
 
 const stringifyDates = (object) =>

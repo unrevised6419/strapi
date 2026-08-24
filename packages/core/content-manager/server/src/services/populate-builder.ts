@@ -1,4 +1,5 @@
-import { isNil, merge } from 'lodash/fp';
+import { isNil } from 'lodash';
+import { merge } from 'lodash/fp';
 import type { UID } from '@strapi/types';
 import { type Populate, getDeepPopulate, getQueryPopulate } from './utils/populate';
 

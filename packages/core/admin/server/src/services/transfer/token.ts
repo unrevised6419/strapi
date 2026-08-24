@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import assert from 'assert';
-import { map, omit, uniq, isNil, difference, isEmpty, isNumber } from 'lodash/fp';
+import { uniq, isNil, isEmpty, isNumber } from 'lodash';
+import { map, omit, difference } from 'lodash/fp';
 import { errors } from '@strapi/utils';
 import '@strapi/types';
 import constants from '../constants';

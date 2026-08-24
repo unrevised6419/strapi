@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 import assert from 'node:assert';
+// eslint-disable-next-line no-restricted-syntax -- fp `isEqual` is curried here; the plain lodash version is not.
 import { isEqual } from 'lodash/fp';
 import { register } from 'esbuild-register/dist/node';
 

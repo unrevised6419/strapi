@@ -1,4 +1,5 @@
-import { pick, pipe, has, prop, isNil, cloneDeep } from 'lodash/fp';
+import { isNil, cloneDeep } from 'lodash';
+import { pick, pipe, has, prop } from 'lodash/fp';
 import { errors, contentTypes as contentTypeUtils } from '@strapi/utils';
 import type { Struct } from '@strapi/types';
 import { getService } from '../utils';

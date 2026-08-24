@@ -1,4 +1,5 @@
-import { isNil, prop, omit, castArray } from 'lodash/fp';
+import { isNil, castArray } from 'lodash';
+import { prop, omit } from 'lodash/fp';
 import createDebug from 'debug';
 
 import type { Knex } from 'knex';

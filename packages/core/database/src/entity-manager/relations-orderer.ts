@@ -1,5 +1,5 @@
-import { castArray, maxBy } from 'lodash/fp';
-import _ from 'lodash';
+import { maxBy } from 'lodash/fp';
+import _, { castArray } from 'lodash';
 
 import { InvalidRelationError } from '../errors';
 import type { ID } from '../types';

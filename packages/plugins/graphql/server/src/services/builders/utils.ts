@@ -1,4 +1,5 @@
-import { entries, mapValues, omit } from 'lodash/fp';
+import { entries } from 'lodash';
+import { mapValues, omit } from 'lodash/fp';
 import { idArg, nonNull } from 'nexus';
 import { hasSort, pagination } from '@strapi/utils';
 import type { Core, Struct } from '@strapi/types';

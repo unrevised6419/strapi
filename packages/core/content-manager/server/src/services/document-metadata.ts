@@ -1,4 +1,5 @@
-import { groupBy, pick, uniq } from 'lodash/fp';
+import { uniq } from 'lodash';
+import { groupBy, pick } from 'lodash/fp';
 
 import { async, contentTypes } from '@strapi/utils';
 import type { Core, UID, Modules } from '@strapi/types';

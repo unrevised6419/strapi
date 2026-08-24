@@ -1,15 +1,6 @@
 import { subject as asSubject } from '@casl/ability';
-import {
-  defaults,
-  omit,
-  isEmpty,
-  uniq,
-  intersection,
-  pick,
-  getOr,
-  isObject,
-  cloneDeep,
-} from 'lodash/fp';
+import { isEmpty, uniq, isObject, cloneDeep } from 'lodash';
+import { defaults, omit, intersection, pick, getOr } from 'lodash/fp';
 
 import type { UID } from '@strapi/types';
 

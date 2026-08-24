@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
-import { pipe, values, sortBy, map } from 'lodash/fp';
+import { values } from 'lodash';
+import { pipe, sortBy, map } from 'lodash/fp';
 
 import { models } from '../common';
 import { emitDefinitions, format, generateSharedExtensionDefinition } from '../utils';

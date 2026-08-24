@@ -1,6 +1,7 @@
 'use strict';
 
-const { castArray, map, every, pipe } = require('lodash/fp');
+const { map, every, pipe } = require('lodash/fp');
+const { castArray } = require('lodash');
 const { ForbiddenError, UnauthorizedError } = require('@strapi/utils').errors;
 
 const { getService } = require('../utils');

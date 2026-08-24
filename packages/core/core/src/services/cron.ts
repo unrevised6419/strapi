@@ -1,5 +1,5 @@
 import type { Job, Spec } from 'node-schedule';
-import { isFunction } from 'lodash/fp';
+import { isFunction } from 'lodash';
 import type { Core } from '@strapi/types';
 
 // Lazy: only required when a cron task is actually scheduled

@@ -1,5 +1,4 @@
-import { CurriedFunction1 } from 'lodash';
-import { isObject } from 'lodash/fp';
+import { CurriedFunction1, isObject } from 'lodash';
 import type { z } from 'zod/v4';
 
 import { getNonWritableAttributes, constants } from '../content-types';

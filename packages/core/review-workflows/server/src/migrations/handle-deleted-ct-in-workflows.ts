@@ -1,4 +1,5 @@
-import { difference, keys } from 'lodash/fp';
+import { keys } from 'lodash';
+import { difference } from 'lodash/fp';
 import { async } from '@strapi/utils';
 import { WORKFLOW_MODEL_UID } from '../constants/workflows';
 import { getWorkflowContentTypeFilter } from '../utils/review-workflows';

@@ -1,4 +1,5 @@
-import { isNil, get } from 'lodash/fp';
+import { isNil } from 'lodash';
+import { get } from 'lodash/fp';
 import { getService } from '../utils';
 import { FOLDER_MODEL_UID, API_UPLOAD_FOLDER_BASE_NAME } from '../constants';
 

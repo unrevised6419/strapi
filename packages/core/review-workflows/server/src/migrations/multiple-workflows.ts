@@ -1,4 +1,5 @@
-import { get, keys, pickBy, pipe } from 'lodash/fp';
+import { keys } from 'lodash';
+import { get, pickBy, pipe } from 'lodash/fp';
 import { WORKFLOW_MODEL_UID } from '../constants/workflows';
 
 async function migrateWorkflowsContentTypes({ oldContentTypes, contentTypes }: any) {

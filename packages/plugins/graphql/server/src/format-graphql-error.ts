@@ -1,4 +1,5 @@
-import { toUpper, snakeCase, pick, isEmpty } from 'lodash/fp';
+import { toUpper, snakeCase, isEmpty } from 'lodash';
+import { pick } from 'lodash/fp';
 import { errors } from '@strapi/utils';
 import { unwrapResolverError } from '@apollo/server/errors';
 import { GraphQLError, type GraphQLFormattedError } from 'graphql';

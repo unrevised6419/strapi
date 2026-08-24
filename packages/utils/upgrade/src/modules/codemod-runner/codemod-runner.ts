@@ -1,4 +1,5 @@
-import { groupBy, size } from 'lodash/fp';
+import { size } from 'lodash';
+import { groupBy } from 'lodash/fp';
 
 import {
   codemodRepositoryFactory,

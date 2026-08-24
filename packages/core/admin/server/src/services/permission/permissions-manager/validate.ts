@@ -1,5 +1,6 @@
 import { subject as asSubject } from '@casl/ability';
-import { defaults, omit, isEmpty, uniq, intersection, getOr, isObject } from 'lodash/fp';
+import { isEmpty, uniq, isObject } from 'lodash';
+import { defaults, omit, intersection, getOr } from 'lodash/fp';
 
 import {
   contentTypes,

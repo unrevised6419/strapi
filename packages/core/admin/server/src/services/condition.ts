@@ -1,4 +1,4 @@
-import { isString } from 'lodash/fp';
+import { isString } from 'lodash';
 import { getService } from '../utils';
 
 const isValidCondition = (condition: unknown) => {

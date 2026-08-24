@@ -1,4 +1,5 @@
-import { merge, pipe, omit, isNil } from 'lodash/fp';
+import { isNil } from 'lodash';
+import { merge, pipe, omit } from 'lodash/fp';
 import { PaginationError } from './errors';
 
 interface PaginationArgs {

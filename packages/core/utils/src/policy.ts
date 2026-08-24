@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-syntax -- fp `eq` is curried here; the plain lodash version is not.
 import { eq } from 'lodash/fp';
 
 interface Options {

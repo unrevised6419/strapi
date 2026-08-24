@@ -1,4 +1,5 @@
-import { isEmpty, pick, pipe, propOr, isEqual } from 'lodash/fp';
+import { isEmpty, isEqual } from 'lodash';
+import { pick, pipe, propOr } from 'lodash/fp';
 import { traverse } from '@strapi/utils';
 import qs from 'qs';
 import { isSortable, getDefaultMainField, getSortableAttributes } from './attributes';

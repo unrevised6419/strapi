@@ -1,4 +1,5 @@
-import { take, drop, map, prop, pick, reverse, isNil } from 'lodash/fp';
+import { isNil } from 'lodash';
+import { take, drop, map, prop, pick, reverse } from 'lodash/fp';
 import { getService } from '../utils';
 import constants from '../../../../server/src/services/constants';
 

@@ -2,7 +2,7 @@ import os from 'os';
 import path from 'path';
 import fs from 'fs';
 import fse from 'fs-extra';
-import _ from 'lodash';
+import _, { toNumber, isNil } from 'lodash';
 import { extension } from 'mime-types';
 import {
   async,
@@ -12,7 +12,7 @@ import {
   file as fileUtils,
   pagination as paginationUtils,
 } from '@strapi/utils';
-import { has, toNumber, isNil } from 'lodash/fp';
+import { has } from 'lodash/fp';
 
 import type { Core, UID } from '@strapi/types';
 

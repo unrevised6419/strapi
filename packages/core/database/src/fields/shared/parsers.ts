@@ -1,4 +1,5 @@
-import { padCharsEnd, isString, toString } from 'lodash/fp';
+import { isString, toString } from 'lodash';
+import { padCharsEnd } from 'lodash/fp';
 import * as dateFns from 'date-fns';
 
 import { InvalidDateTimeError, InvalidDateError, InvalidTimeError } from '../../errors';

@@ -1,4 +1,5 @@
-import { cloneDeep, get, has, set, merge, omit } from 'lodash/fp';
+import { cloneDeep } from 'lodash';
+import { get, has, set, merge, omit } from 'lodash/fp';
 
 import type { Utils } from '@strapi/types';
 

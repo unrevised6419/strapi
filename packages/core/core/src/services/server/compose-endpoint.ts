@@ -1,4 +1,5 @@
-import { toLower, castArray, trim, prop, isNil } from 'lodash/fp';
+import { toLower, castArray, trim, isNil } from 'lodash';
+import { prop } from 'lodash/fp';
 import type { Core, UID } from '@strapi/types';
 import { errors } from '@strapi/utils';
 import Router from '@koa/router';

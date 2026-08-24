@@ -1,4 +1,5 @@
-import { assign, isEmpty, isObject, map, omit, size } from 'lodash/fp';
+import { isEmpty, isObject, size } from 'lodash';
+import { assign, map, omit } from 'lodash/fp';
 
 import type { Core, UID, Data, Struct } from '@strapi/types';
 import * as componentsService from '../../utils/components';

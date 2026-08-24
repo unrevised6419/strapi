@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { errors } from '@strapi/utils';
-import { omit, uniq } from 'lodash/fp';
+import { uniq } from 'lodash';
+import { omit } from 'lodash/fp';
 import type { AdminApiToken, ContentApiApiToken } from '../../../../shared/contracts/api-token';
 import constants from '../constants';
 import {

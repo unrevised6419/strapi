@@ -1,4 +1,5 @@
-import { pick, uniq, prop, getOr, flatten, pipe, map } from 'lodash/fp';
+import { uniq, flatten } from 'lodash';
+import { pick, prop, getOr, pipe, map } from 'lodash/fp';
 import { contentTypes as contentTypesUtils, errors } from '@strapi/utils';
 import type { Core, UID } from '@strapi/types';
 import type { FillFromLocale } from '../../../shared/contracts/content-manager';

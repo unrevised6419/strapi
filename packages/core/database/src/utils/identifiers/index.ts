@@ -8,7 +8,8 @@
  * have access to the full length names, in particular for migration purposes, but also so that (in theory) the feature
  * could be disabled and stay compatible with v4 database structure.
  */
-import _, { isInteger, partition, snakeCase, sumBy } from 'lodash/fp';
+import _, { partition, sumBy } from 'lodash/fp';
+import { isInteger, snakeCase } from 'lodash';
 import { createHash } from './hash';
 import {
   IdentifiersOptions,

@@ -1,6 +1,7 @@
 import type { Core, UID } from '@strapi/types';
 import { async, errors } from '@strapi/utils';
-import { map, pick, isEqual } from 'lodash/fp';
+import { isEqual } from 'lodash';
+import { map, pick } from 'lodash/fp';
 import type { StagePermission } from '../../../shared/contracts/review-workflows';
 import { STAGE_MODEL_UID, ENTITY_STAGE_ATTRIBUTE, ERRORS } from '../constants/workflows';
 import { getService } from '../utils';

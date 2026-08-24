@@ -1,7 +1,7 @@
 import * as z from 'zod/v4';
 import { strings, validateZodSchema, contentTypes } from '@strapi/utils';
 import type { Struct, UID } from '@strapi/types';
-import { isNil, isNull, isNumber, isObject, isUndefined, snakeCase } from 'lodash/fp';
+import { isNil, isNull, isNumber, isObject, isUndefined, snakeCase } from 'lodash';
 
 import { isReservedAttributeName, isReservedModelName } from '../../services/builder';
 import { coreUids, typeKinds, VALID_UID_TARGETS } from '../../services/constants';

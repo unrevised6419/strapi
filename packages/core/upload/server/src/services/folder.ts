@@ -1,4 +1,5 @@
-import { sortBy, map, isUndefined } from 'lodash/fp';
+import { isUndefined } from 'lodash';
+import { sortBy, map } from 'lodash/fp';
 import { strings, setCreatorFields } from '@strapi/utils';
 import { FOLDER_MODEL_UID, FILE_MODEL_UID } from '../constants';
 import { getService } from '../utils';

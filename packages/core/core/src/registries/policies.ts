@@ -1,4 +1,5 @@
-import { pickBy, has, castArray } from 'lodash/fp';
+import { castArray } from 'lodash';
+import { pickBy, has } from 'lodash/fp';
 import type { Core } from '@strapi/types';
 import { addNamespace, hasNamespace } from './namespace';
 

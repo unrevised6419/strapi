@@ -1,9 +1,6 @@
 import {
   castArray,
   compact,
-  difference,
-  differenceWith,
-  has,
   isEmpty,
   isEqual,
   isInteger,
@@ -14,11 +11,8 @@ import {
   isPlainObject,
   isString,
   isUndefined,
-  map,
-  pick,
-  uniqBy,
-  uniqWith,
-} from 'lodash/fp';
+} from 'lodash';
+import { difference, differenceWith, has, map, pick, uniqBy, uniqWith } from 'lodash/fp';
 
 import * as types from '../utils/types';
 import { createField } from '../fields';

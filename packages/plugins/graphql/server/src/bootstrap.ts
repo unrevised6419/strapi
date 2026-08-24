@@ -1,4 +1,5 @@
-import { isEmpty, mergeWith, isObject, isFunction } from 'lodash/fp';
+import { isEmpty, isObject, isFunction } from 'lodash';
+import { mergeWith } from 'lodash/fp';
 import { ApolloServer, type ApolloServerPlugin, type ApolloServerOptions } from '@apollo/server';
 import {
   ApolloServerPluginLandingPageLocalDefault,

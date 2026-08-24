@@ -1,5 +1,5 @@
-import { CurriedFunction1 } from 'lodash';
-import { cloneDeep, omit, pick } from 'lodash/fp';
+import { CurriedFunction1, cloneDeep } from 'lodash';
+import { omit, pick } from 'lodash/fp';
 import type { z } from 'zod/v4';
 
 import { constants, getNonWritableAttributes } from '../content-types';

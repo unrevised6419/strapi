@@ -1,4 +1,5 @@
-import { isNil, omit } from 'lodash/fp';
+import { isNil } from 'lodash';
+import { omit } from 'lodash/fp';
 
 import {
   setCreatorFields,

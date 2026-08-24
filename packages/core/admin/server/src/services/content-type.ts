@@ -1,5 +1,5 @@
-import _ from 'lodash';
-import { uniq, startsWith } from 'lodash/fp';
+import _, { uniq } from 'lodash';
+import { startsWith } from 'lodash/fp';
 import { contentTypes as contentTypesUtils } from '@strapi/utils';
 import type { Modules, Struct } from '@strapi/types';
 import { getService } from '../utils';

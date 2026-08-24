@@ -1,7 +1,8 @@
 import * as sift from 'sift';
 import qs from 'qs';
 import { AbilityBuilder, Ability } from '@casl/ability';
-import { pick, isNil, isObject } from 'lodash/fp';
+import { isNil, isObject } from 'lodash';
+import { pick } from 'lodash/fp';
 import type { ParametrizedAction, PermissionRule } from '../../types';
 
 export interface CustomAbilityBuilder {
