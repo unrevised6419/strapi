@@ -1,4 +1,5 @@
 import { isNil } from 'lodash';
+// eslint-disable-next-line no-restricted-syntax -- fp `eq` is curried here; the plain lodash version is not.
 import { prop, xor, eq, differenceWith } from 'lodash/fp';
 import pmap from 'p-map';
 import type { Data } from '@strapi/types';

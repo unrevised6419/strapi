@@ -2,6 +2,7 @@ import type { Utils } from '@strapi/types';
 
 import { providerFactory } from '@strapi/utils';
 import { uniq } from 'lodash';
+// eslint-disable-next-line no-restricted-syntax -- fp `eq` is curried here; the plain lodash version is not.
 import { pipe, set, pick, eq, omit, remove, get, map, curry, merge } from 'lodash/fp';
 import { Permission } from '../../../../shared/contracts/shared';
 import { SanitizedPermission } from '../../../../shared/contracts/roles';

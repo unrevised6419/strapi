@@ -1,4 +1,5 @@
 import { isString, isObject, isEmpty, flatten, isNil, first, cloneDeep } from 'lodash';
+// eslint-disable-next-line no-restricted-syntax -- `trim` is passed to `.map()`, which supplies an index; plain `trim(string, chars)` would read it as `chars`.
 import { curry, map, trim, split, pipe } from 'lodash/fp';
 
 import { hasSort } from '../sort-query';
