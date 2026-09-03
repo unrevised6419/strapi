@@ -20,6 +20,7 @@
     "jsx": "react-jsx",
     "noUncheckedSideEffectImports": true,
     "erasableSyntaxOnly": true,
-    "moduleDetection": "force"
+    "moduleDetection": "force",
+    "isolatedModules": true
   }
 }

@@ -16,6 +16,7 @@
     "noEmit": true,
     "noUncheckedSideEffectImports": true,
     "erasableSyntaxOnly": true,
-    "moduleDetection": "force"
+    "moduleDetection": "force",
+    "isolatedModules": true
   }
 }
