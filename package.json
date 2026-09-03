@@ -1,5 +1,6 @@
 {
   "name": "strapi",
+  "type": "commonjs",
   "private": true,
   "bugs": {
     "url": "https://github.com/strapi/strapi/issues"
@@ -146,6 +147,7 @@
     "@swc/core": "1.13.5",
     "@swc/helpers": "0.5.17",
     "@swc/jest": "0.2.39",
+    "@types/eslint": "8",
     "@types/fs-extra": "11.0.4",
     "@types/git-url-parse": "9.0.3",
     "@types/prompts": "2.4.9",

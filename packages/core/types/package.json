@@ -1,6 +1,7 @@
 {
   "name": "@strapi/types",
   "version": "5.52.3",
+  "type": "commonjs",
   "description": "Shared typescript types for Strapi internal use",
   "keywords": [
     "strapi"
@@ -39,6 +40,10 @@
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json",
+    "./dist/*": [
+      "./dist/*.js",
+      "./dist/*/index.js"
+    ],
     "./*": "./*"
   },
   "files": [

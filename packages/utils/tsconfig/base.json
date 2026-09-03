@@ -2,6 +2,9 @@
   "$schema": "http://json.schemastore.org/tsconfig",
   "extends": "@tsconfig/node20/tsconfig.json",
   "compilerOptions": {
+    "module": "node20",
+    "moduleResolution": "node16",
+    "types": [],
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
@@ -9,12 +12,11 @@
     "resolveJsonModule": true,
     "noImplicitThis": true,
     "noImplicitAny": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
     "skipLibCheck": true,
     "noEmit": true,
-    "types": [],
     "noUncheckedSideEffectImports": true,
-    "erasableSyntaxOnly": true
+    "erasableSyntaxOnly": true,
+    "moduleDetection": "force",
+    "isolatedModules": true
   }
 }

@@ -1,4 +1,4 @@
-import type { Plugin } from 'vite';
+import type { Plugin } from 'vite' with { 'resolution-mode': 'import' };
 
 import { getDocumentHTML } from '../staticFiles';
 import type { BuildContext } from '../create-build-context';

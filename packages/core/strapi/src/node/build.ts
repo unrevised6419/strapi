@@ -91,10 +91,10 @@ const build = async ({ logger, cwd, tsconfig, installDeps = false, ...options }:
     await writeStaticClientFiles(ctx);
 
     if (ctx.bundler === 'webpack') {
-      const { build: buildWebpack } = await import('./webpack/build');
+      const { build: buildWebpack } = await import('./webpack/build.js');
       await buildWebpack(ctx);
     } else if (ctx.bundler === 'vite') {
-      const { build: buildVite } = await import('./vite/build');
+      const { build: buildVite } = await import('./vite/build.js');
       await buildVite(ctx);
     }
 

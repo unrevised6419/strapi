@@ -1,6 +1,7 @@
 {
   "name": "@strapi/cloud-cli",
   "version": "5.52.3",
+  "type": "commonjs",
   "description": "Commands to interact with the Strapi Cloud",
   "keywords": [
     "strapi",
@@ -34,6 +35,16 @@
   "source": "./src/index.ts",
   "types": "./dist/index.d.ts",
   "bin": "./bin/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "./dist",
     "./bin"

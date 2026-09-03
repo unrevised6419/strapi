@@ -1,4 +1,4 @@
-import type { InlineConfig, UserConfig } from 'vite';
+import type { InlineConfig, UserConfig } from 'vite' with { 'resolution-mode': 'import' };
 
 import { getUserConfig } from '../core/config';
 import { ADMIN_VITE_DEDUPE_MODULES } from '../core/admin-vite-alias-modules';

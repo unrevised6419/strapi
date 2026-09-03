@@ -1,6 +1,7 @@
 {
   "name": "@strapi/generators",
   "version": "5.52.3",
+  "type": "commonjs",
   "description": "Interactive API generator.",
   "keywords": [
     "strapi",
@@ -32,6 +33,16 @@
   "module": "./dist/index.mjs",
   "source": "./src/index.ts",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist/"
   ],
