@@ -1,6 +1,7 @@
 {
   "name": "create-strapi-app",
   "version": "5.52.3",
+  "type": "commonjs",
   "description": "Generate a new Strapi application.",
   "keywords": [
     "create-strapi-app",

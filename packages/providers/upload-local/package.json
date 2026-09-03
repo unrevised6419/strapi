@@ -1,6 +1,7 @@
 {
   "name": "@strapi/provider-upload-local",
   "version": "5.52.3",
+  "type": "commonjs",
   "description": "Local provider for strapi upload",
   "keywords": [
     "upload",
