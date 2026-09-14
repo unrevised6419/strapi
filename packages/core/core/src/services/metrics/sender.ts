@@ -1,5 +1,4 @@
 import os from 'os';
-import path from 'path';
 import _ from 'lodash';
 import isDocker from 'is-docker';
 import ciEnv from 'ci-info';
@@ -52,7 +51,7 @@ export default (strapi: Core.Strapi): Sender => {
   const installId = generateInstallId(uuid, installIdFromPackageJson);
 
   const serverRootPath = strapi.dirs.app.root;
-  const adminRootPath = path.join(strapi.dirs.app.root, 'src', 'admin');
+  const adminRootPath = strapi.dirs.app.admin;
 
   const anonymousUserProperties = {
     environment: strapi.config.environment,

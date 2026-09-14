@@ -1,3 +1,4 @@
+import path from 'path';
 import { get } from 'lodash/fp';
 import metrics from '../index';
 
@@ -28,6 +29,7 @@ describe('metrics', () => {
       dirs: {
         app: {
           root: process.cwd(),
+          admin: path.join(process.cwd(), 'src', 'admin'),
         },
       },
       requestContext: {
@@ -67,6 +69,7 @@ describe('metrics', () => {
       dirs: {
         app: {
           root: process.cwd(),
+          admin: path.join(process.cwd(), 'src', 'admin'),
         },
       },
       requestContext: {
@@ -103,6 +106,7 @@ describe('metrics', () => {
       dirs: {
         app: {
           root: process.cwd(),
+          admin: path.join(process.cwd(), 'src', 'admin'),
         },
       },
       requestContext: {
@@ -156,6 +160,7 @@ describe('metrics', () => {
       dirs: {
         app: {
           root: process.cwd(),
+          admin: path.join(process.cwd(), 'src', 'admin'),
         },
       },
       cron: {
@@ -190,6 +195,7 @@ describe('metrics', () => {
       dirs: {
         app: {
           root: process.cwd(),
+          admin: path.join(process.cwd(), 'src', 'admin'),
         },
       },
       requestContext: {
@@ -240,6 +246,7 @@ describe('metrics', () => {
       dirs: {
         app: {
           root: process.cwd(),
+          admin: path.join(process.cwd(), 'src', 'admin'),
         },
       },
       requestContext: {
@@ -279,6 +286,7 @@ describe('metrics', () => {
       dirs: {
         app: {
           root: process.cwd(),
+          admin: path.join(process.cwd(), 'src', 'admin'),
         },
       },
       requestContext: {

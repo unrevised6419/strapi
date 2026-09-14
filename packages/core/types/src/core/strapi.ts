@@ -155,6 +155,8 @@ export interface StrapiDirectories {
   app: {
     root: string;
     src: string;
+    admin: string;
+    adminSrc: string;
     api: string;
     components: string;
     extensions: string;

@@ -108,9 +108,7 @@ export default {
     }
 
     const useTypescriptOnServer = await isUsingTypeScript(strapi.dirs.app.root);
-    const useTypescriptOnAdmin = await isUsingTypeScript(
-      path.join(strapi.dirs.app.root, 'src', 'admin')
-    );
+    const useTypescriptOnAdmin = await isUsingTypeScript(strapi.dirs.app.admin);
     const isHostedOnStrapiCloud = env('STRAPI_HOSTING', null) === 'strapi.cloud';
 
     const numberOfAllContentTypes = _.size(strapi.contentTypes);

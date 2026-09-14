@@ -8,7 +8,7 @@ const getUserConfig = async <TConfig>(
   ctx: BuildContext
 ): Promise<TConfig | undefined> => {
   for (const file of fileNames) {
-    const filePath = path.join(ctx.appDir, 'src', 'admin', file);
+    const filePath = path.join(ctx.strapi.dirs.app.admin, file);
     const configFile = await loadFile(filePath);
 
     if (configFile) {
