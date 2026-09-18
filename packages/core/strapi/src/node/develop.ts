@@ -349,6 +349,10 @@ function startWatcher(
         /(^|[/\\])\../, // dot files
         /tmp/,
         '**/src/admin/**',
+        strapiInstance.dirs.app.admin,
+        utils().strings.joinBy('/', strapiInstance.dirs.app.admin, '**'),
+        strapiInstance.dirs.app.adminSrc,
+        utils().strings.joinBy('/', strapiInstance.dirs.app.adminSrc, '**'),
         '**/src/plugins/**/admin/**',
         '**/dist/src/plugins/test/admin/**',
         '**/documentation',

@@ -12,6 +12,16 @@ export interface Cron {
 
 export interface Dirs {
   public?: string;
+  /**
+   * Admin directory holding the bundler config (`vite.config.*` / `webpack.config.*`).
+   * Relative paths are resolved from the app root. Defaults to `src/admin`.
+   */
+  admin?: string;
+  /**
+   * Admin source directory holding the entry file (`app.*`).
+   * Relative paths are resolved from the app root. Defaults to `dirs.admin`.
+   */
+  adminSrc?: string;
 }
 
 export interface LoggerConfig {

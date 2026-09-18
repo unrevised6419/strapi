@@ -150,7 +150,10 @@ const createBuildContext = async ({
 
   const target = browserslist.loadConfig({ path: cwd }) ?? DEFAULT_BROWSERSLIST;
 
-  const customisations = await loadUserAppFile({ appDir, runtimeDir });
+  const customisations = await loadUserAppFile({
+    runtimeDir,
+    adminSrcDir: strapiInstance.dirs.app.adminSrc,
+  });
 
   const features = strapiInstance.config.get('features', undefined);
 

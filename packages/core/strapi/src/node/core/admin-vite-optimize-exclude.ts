@@ -220,7 +220,7 @@ const loadAppPackageJson = async (cwd: string): Promise<PackageJson | null> => {
  * singletons are never auto-excluded — @strapi/strapi matches the heuristic but must stay on
  * the optimizeDeps.include path (#26944, #27014).
  *
- * Apps can still exclude additional packages via `src/admin/vite.config` optimizeDeps.exclude.
+ * Apps can still exclude additional packages via the admin `vite.config` optimizeDeps.exclude.
  *
  * @internal
  */

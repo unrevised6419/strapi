@@ -24,10 +24,15 @@ interface AppFile {
 
 const loadUserAppFile = async ({
   runtimeDir,
-  appDir,
-}: Pick<BaseContext, 'appDir' | 'runtimeDir'>): Promise<AppFile | undefined> => {
+  adminSrcDir,
+}: Pick<BaseContext, 'runtimeDir'> & {
+  /**
+   * The absolute path to the admin source directory, i.e. `strapi.dirs.app.adminSrc`
+   */
+  adminSrcDir: string;
+}): Promise<AppFile | undefined> => {
   for (const file of ADMIN_APP_FILES) {
-    const filePath = path.join(appDir, 'src', 'admin', file);
+    const filePath = path.join(adminSrcDir, file);
 
     if (await pathExists(filePath)) {
       return {
