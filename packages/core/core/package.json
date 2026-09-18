@@ -51,6 +51,7 @@
     "lint": "run -T eslint . --max-warnings=0",
     "prepublishOnly": "yarn clean && yarn build",
     "test:ts": "run -T tsc -p tsconfig.json",
+    "test:types:public": "node ../../../scripts/check-public-types.mjs",
     "test:unit": "run -T jest",
     "test:unit:watch": "run -T jest --watch",
     "test:unit:vitest": "vitest run",
