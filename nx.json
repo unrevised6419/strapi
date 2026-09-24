@@ -36,6 +36,11 @@
       "dependsOn": ["^build:types"],
       "cache": true
     },
+    "test:types:public": {
+      "inputs": ["production", "^production", "{workspaceRoot}/scripts/check-public-types.mjs"],
+      "dependsOn": ["build"],
+      "cache": true
+    },
     "test:unit": {
       "inputs": ["default", "{workspaceRoot}/jest-preset.unit.js"],
       "cache": true
