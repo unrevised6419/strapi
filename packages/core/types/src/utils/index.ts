@@ -234,3 +234,26 @@ export type OneOf<T, U> = (T & { [K in keyof U]?: never }) | (U & { [K in keyof 
  * ```
  */
 export type Pretty<T> = { [K in keyof T]: T[K] } & unknown;
+
+declare const flavor: unique symbol;
+
+/**
+ * `Flavor<TValue, TName>` tags a type with a nominal name while keeping it assignable from its base type.
+ *
+ * Unlike a brand, the tag is optional: a plain `TValue` is accepted wherever `Flavor<TValue, TName>` is
+ * expected, but two flavors with different names are not assignable to each other.
+ *
+ * The tag key is a `unique symbol`, so it never collides with real properties and does not appear in autocompletion.
+ *
+ * @template TValue The underlying type being flavored.
+ * @template TName A unique name identifying the flavor.
+ *
+ * @example
+ * type UserID = Flavor<string, 'UserID'>;
+ * type PostID = Flavor<string, 'PostID'>;
+ *
+ * const userId: UserID = 'abc'; // Valid: plain strings are accepted
+ * const postId: PostID = userId; // Error: 'UserID' is not assignable to 'PostID'
+ * const raw: string = userId; // Valid: a flavor is still its base type
+ */
+export type Flavor<TValue, TName extends string> = TValue & { readonly [flavor]?: TName };

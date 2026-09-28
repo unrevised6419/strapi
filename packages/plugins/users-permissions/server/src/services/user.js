@@ -1,3 +1,5 @@
+// @ts-check
+
 'use strict';
 
 /**
@@ -5,6 +7,9 @@
  *
  * @description: A set of functions similar to controller's actions to avoid code duplication.
  */
+
+/** @import { Data } from '@strapi/strapi' */
+/** @import { Role, User } from '../types' */
 
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
@@ -44,7 +49,7 @@ module.exports = ({ strapi }) => ({
    * hashes it if the attribute type is 'password',
    *
    * @param {object} values - The object containing the fields to be hashed.
-   * @return {object} The values object with hashed password fields if they were present.
+   * @return {Promise<object>} The values object with hashed password fields if they were present.
    */
   async ensureHashedPasswords(values) {
     const attributes = strapi.getModel(USER_MODEL_UID).attributes;
@@ -62,7 +67,8 @@ module.exports = ({ strapi }) => ({
 
   /**
    * Promise to add a/an user.
-   * @return {Promise}
+   * @param {object} values
+   * @return {Promise<User>}
    */
   async add(values) {
     // Use the Document Service so relation inputs accept both the internal
@@ -77,9 +83,9 @@ module.exports = ({ strapi }) => ({
 
   /**
    * Promise to edit a/an user.
-   * @param {string} userId
+   * @param {Data.ID} userId
    * @param {object} params
-   * @return {Promise}
+   * @return {Promise<User | null>}
    */
   async edit(userId, params = {}) {
     // The user is addressed by its numeric id (e.g. the `/users/:id` route),
@@ -87,6 +93,7 @@ module.exports = ({ strapi }) => ({
     // relation inputs are processed by the Document Service, which accepts both
     // numeric ids (legacy) and documentIds (v5 default). The Document Service
     // hashes `password` attributes itself, so we must not pre-hash here.
+    /** @type {Pick<User, 'documentId'> | null} */
     const entry = await strapi.db
       .query(USER_MODEL_UID)
       .findOne({ where: { id: userId }, select: ['documentId'] });
@@ -104,7 +111,9 @@ module.exports = ({ strapi }) => ({
 
   /**
    * Promise to fetch a/an user.
-   * @return {Promise}
+   * @param {Data.ID} id
+   * @param {object} [params]
+   * @return {Promise<User | null>}
    */
   fetch(id, params) {
     const query = strapi
@@ -121,7 +130,8 @@ module.exports = ({ strapi }) => ({
 
   /**
    * Promise to fetch authenticated user.
-   * @return {Promise}
+   * @param {Data.ID} id
+   * @return {Promise<(User & { role: Role }) | null>}
    */
   fetchAuthenticatedUser(id) {
     return strapi.db.query(USER_MODEL_UID).findOne({ where: { id }, populate: ['role'] });
@@ -129,7 +139,7 @@ module.exports = ({ strapi }) => ({
 
   /**
    * Promise to fetch all users.
-   * @return {Promise}
+   * @return {Promise<User[]>}
    */
   fetchAll(params) {
     const query = strapi
@@ -141,7 +151,8 @@ module.exports = ({ strapi }) => ({
 
   /**
    * Promise to remove a/an user.
-   * @return {Promise}
+   * @param {{ id: Data.ID }} params
+   * @return {Promise<User | null>}
    */
   async remove(params) {
     // Invalidate sessions for all affected users
@@ -157,6 +168,9 @@ module.exports = ({ strapi }) => ({
     return bcrypt.compare(password, hash);
   },
 
+  /**
+   * @param {User} user
+   */
   async sendConfirmationEmail(user) {
     const userPermissionService = getService('users-permissions');
     const pluginStore = await strapi.store({ type: 'plugin', name: 'users-permissions' });

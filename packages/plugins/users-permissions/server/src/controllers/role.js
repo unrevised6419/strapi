@@ -1,4 +1,9 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
+/** @import { Role } from '../types' */
 
 const _ = require('lodash');
 const { async, errors } = require('@strapi/utils');
@@ -18,7 +23,7 @@ module.exports = {
   /**
    * Default action.
    *
-   * @return {Object}
+   * @return {Promise<void>}
    */
   async createRole(ctx) {
     if (_.isEmpty(ctx.request.body)) {
@@ -31,6 +36,7 @@ module.exports = {
   },
 
   async findOne(ctx) {
+    /** @type {{ id: Data.ID }} */
     const { id } = ctx.params;
 
     const role = await getService('role').findOne(id);
@@ -53,6 +59,7 @@ module.exports = {
   },
 
   async updateRole(ctx) {
+    /** @type {Data.ID} */
     const roleID = ctx.params.role;
 
     if (_.isEmpty(ctx.request.body)) {
@@ -65,6 +72,7 @@ module.exports = {
   },
 
   async deleteRole(ctx) {
+    /** @type {Data.ID} */
     const roleID = ctx.params.role;
 
     if (!roleID) {
@@ -72,9 +80,14 @@ module.exports = {
     }
 
     // Fetch public role.
+    /** @type {Role | null} */
     const publicRole = await strapi.db
       .query('plugin::users-permissions.role')
       .findOne({ where: { type: 'public' } });
+
+    if (!publicRole) {
+      throw new ApplicationError('Impossible to find the public role');
+    }
 
     const publicRoleID = publicRole.id;
 

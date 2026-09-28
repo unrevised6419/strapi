@@ -1,4 +1,9 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
+/** @import { User } from '../types' */
 
 /**
  * Jwt.js service
@@ -28,6 +33,10 @@ module.exports = ({ strapi }) => ({
     return this.verify(token);
   },
 
+  /**
+   * @param {{ id?: Data.ID, userId?: Data.ID, toJSON?: () => object }} payload `id` is the user's entry id
+   * @param {object} [jwtOptions]
+   */
   issue(payload, jwtOptions = {}) {
     const mode = strapi.config.get('plugin::users-permissions.jwtManagement', 'legacy-support');
 
@@ -63,6 +72,10 @@ module.exports = ({ strapi }) => ({
     );
   },
 
+  /**
+   * @param {string} token
+   * @return {Promise<{ id?: Data.ID, sessionId?: string }>} `id` is the user's entry id
+   */
   async verify(token) {
     const mode = strapi.config.get('plugin::users-permissions.jwtManagement', 'legacy-support');
 
@@ -73,6 +86,7 @@ module.exports = ({ strapi }) => ({
         throw new Error('Invalid token.');
       }
 
+      /** @type {User | null} */
       const user = await strapi.db
         .query('plugin::users-permissions.user')
         .findOne({ where: { id: Number(result.payload.userId) || result.payload.userId } });
@@ -96,7 +110,8 @@ module.exports = ({ strapi }) => ({
           if (err) {
             return reject(new Error('Invalid token.'));
           }
-          resolve(tokenPayload);
+          // Signed by `issue`, so the payload carries the user's entry `id`
+          resolve(/** @type {{ id?: Data.ID }} */ (tokenPayload));
         }
       );
     });

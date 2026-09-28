@@ -1,4 +1,9 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
+/** @import { User } from '../types' */
 
 const _ = require('lodash');
 const { contentTypes: contentTypesUtils } = require('@strapi/utils');
@@ -15,10 +20,15 @@ const ACTIONS = {
   delete: 'plugin::content-manager.explorer.delete',
 };
 
-const findEntityAndCheckPermissions = async (ability, action, model, id) => {
-  const doc = await strapi.service('plugin::content-manager.document-manager').findOne(id, model, {
-    populate: [`${CREATED_BY_ATTRIBUTE}.roles`],
-  });
+/**
+ * @param {Data.DocumentID} documentId
+ */
+const findEntityAndCheckPermissions = async (ability, action, model, documentId) => {
+  const doc = await strapi
+    .service('plugin::content-manager.document-manager')
+    .findOne(documentId, model, {
+      populate: [`${CREATED_BY_ATTRIBUTE}.roles`],
+    });
 
   if (_.isNil(doc)) {
     throw new NotFoundError();
@@ -40,10 +50,11 @@ const findEntityAndCheckPermissions = async (ability, action, model, id) => {
 module.exports = {
   /**
    * Create a/an user record.
-   * @return {Object}
+   * @return {Promise<void>}
    */
   async create(ctx) {
     const { body } = ctx.request;
+    /** @type {{ user: { id: Data.ID }, userAbility: any }} */
     const { user: admin, userAbility } = ctx.state;
 
     const { email, username } = body;
@@ -60,12 +71,13 @@ module.exports = {
 
     const sanitizedBody = await pm.pickPermittedFieldsOf(body, { subject: userModel });
 
-    const advanced = await strapi
-      .store({ type: 'plugin', name: 'users-permissions', key: 'advanced' })
-      .get();
+    const advanced = /** @type {{ unique_email?: boolean }} */ (
+      await strapi.store({ type: 'plugin', name: 'users-permissions', key: 'advanced' }).get()
+    );
 
     await validateCreateUserBody(ctx.request.body);
 
+    /** @type {User | null} */
     const userWithSameUsername = await strapi.db
       .query('plugin::users-permissions.user')
       .findOne({ where: { username } });
@@ -75,6 +87,7 @@ module.exports = {
     }
 
     if (advanced.unique_email) {
+      /** @type {User | null} */
       const userWithSameEmail = await strapi.db
         .query('plugin::users-permissions.user')
         .findOne({ where: { email: email.toLowerCase() } });
@@ -107,17 +120,19 @@ module.exports = {
   },
   /**
    * Update a/an user record.
-   * @return {Object}
+   * @return {Promise<void>}
    */
 
   async update(ctx) {
+    /** @type {{ id: Data.DocumentID }} */
     const { id: documentId } = ctx.params;
     const { body } = ctx.request;
+    /** @type {{ user: { id: Data.ID }, userAbility: any }} */
     const { user: admin, userAbility } = ctx.state;
 
-    const advancedConfigs = await strapi
-      .store({ type: 'plugin', name: 'users-permissions', key: 'advanced' })
-      .get();
+    const advancedConfigs = /** @type {{ unique_email?: boolean }} */ (
+      await strapi.store({ type: 'plugin', name: 'users-permissions', key: 'advanced' }).get()
+    );
 
     const { email, username, password } = body;
 
@@ -137,6 +152,7 @@ module.exports = {
     }
 
     if (_.has(body, 'username')) {
+      /** @type {User | null} */
       const userWithSameUsername = await strapi.db
         .query('plugin::users-permissions.user')
         .findOne({ where: { username } });
@@ -147,6 +163,7 @@ module.exports = {
     }
 
     if (_.has(body, 'email') && advancedConfigs.unique_email) {
+      /** @type {User | null} */
       const userWithSameEmail = await strapi.db
         .query('plugin::users-permissions.user')
         .findOne({ where: { email: _.toLower(email) } });

@@ -1,4 +1,9 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
+/** @import { Permission } from '../types' */
 
 const PUBLIC_ROLE_FILTER = { role: { type: 'public' } };
 
@@ -6,9 +11,9 @@ module.exports = ({ strapi }) => ({
   /**
    * Find permissions associated to a specific role ID
    *
-   * @param {number} roleID
+   * @param {Data.ID} roleID
    *
-   * @return {object[]}
+   * @return {Promise<Permission[]>}
    */
   async findRolePermissions(roleID) {
     return strapi.db.query('plugin::users-permissions.role').load({ id: roleID }, 'permissions');
@@ -17,7 +22,7 @@ module.exports = ({ strapi }) => ({
   /**
    * Find permissions for the public role
    *
-   * @return {object[]}
+   * @return {Promise<Permission[]>}
    */
   async findPublicPermissions() {
     return strapi.db.query('plugin::users-permissions.permission').findMany({

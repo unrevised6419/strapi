@@ -1,13 +1,15 @@
 import type { ID } from './constants';
 
-import type { Intersect } from '../utils';
+import type { Flavor, Intersect } from '../utils';
 import type * as UID from '../uid';
 import type { AttributeNames, AttributeValueByName } from '../schema';
 
 /**
  * A type used as the identifier for a document.
+ *
+ * Flavored so it can't be mixed up with an entry `ID`, while plain strings are still accepted.
  */
-export type DocumentID = string;
+export type DocumentID = Flavor<string, 'DocumentID'>;
 
 /**
  * Represents a content-type entry.

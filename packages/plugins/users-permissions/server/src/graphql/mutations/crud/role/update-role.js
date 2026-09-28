@@ -1,4 +1,8 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
 
 const usersPermissionsRoleUID = 'plugin::users-permissions.role';
 
@@ -20,6 +24,9 @@ module.exports = ({ nexus, strapi }) => {
 
     description: 'Update an existing role',
 
+    /**
+     * @param {{ id: Data.ID, data: Record<string, any> }} args `id` is the entry id, not the documentId
+     */
     async resolve(parent, args, context) {
       const { koaContext } = context;
 
