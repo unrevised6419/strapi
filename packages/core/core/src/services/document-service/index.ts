@@ -14,7 +14,7 @@ import entityValidator from '../entity-validator';
  *
  * @param strapi
  * @param validator - validator for database entries
- * @returns DocumentService
+ * @returns {Modules.Documents.Service}
  *
  * @example Access documents
  * const article = strapi.documents('api::article.article').create(params)

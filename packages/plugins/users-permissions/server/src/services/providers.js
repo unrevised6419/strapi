@@ -1,4 +1,8 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Role, User } from '../types' */
 
 /**
  * Module dependencies
@@ -15,8 +19,9 @@ module.exports = ({ strapi }) => {
    * Helper to get profiles
    *
    * @param {String}   provider
+   * @param {object}   oauthData
+   * @param {{ grantResponse?: object }} [options]
    */
-
   const getProfile = async (provider, oauthData, { grantResponse } = {}) => {
     const accessToken = oauthData.access_token || oauthData.code || oauthData.oauth_token;
 
@@ -38,11 +43,11 @@ module.exports = ({ strapi }) => {
    *
    *
    * @param {String}    provider
-   * @param {String}    accessToken
+   * @param {object}    oauthData
+   * @param {{ grantResponse?: object }} [options]
    *
-   * @return  {*}
+   * @return  {Promise<User>}
    */
-
   const connect = async (provider, oauthData, { grantResponse } = {}) => {
     const accessToken = oauthData.access_token || oauthData.code || oauthData.oauth_token;
     const idToken = oauthData.id_token;
@@ -61,6 +66,7 @@ module.exports = ({ strapi }) => {
       throw new Error('Email was not available.');
     }
 
+    /** @type {User[]} */
     const users = await strapi.db.query('plugin::users-permissions.user').findMany({
       where: { email },
     });
@@ -84,9 +90,14 @@ module.exports = ({ strapi }) => {
     }
 
     // Retrieve default role.
+    /** @type {Role | null} */
     const defaultRole = await strapi.db
       .query('plugin::users-permissions.role')
       .findOne({ where: { type: advancedSettings.default_role } });
+
+    if (!defaultRole) {
+      throw new Error('Impossible to find the default role');
+    }
 
     // Username: prefer profile, else email prefix; findValidUsername ensures valid + unique
     const base = (profile.username && profile.username.trim()) || email.split('@')[0];
@@ -102,6 +113,7 @@ module.exports = ({ strapi }) => {
       confirmed: true,
     };
 
+    /** @type {User} */
     const createdUser = await strapi.db
       .query('plugin::users-permissions.user')
       .create({ data: newUser });

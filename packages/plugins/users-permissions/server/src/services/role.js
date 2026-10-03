@@ -1,4 +1,9 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
+/** @import { Permission, Role, User } from '../types' */
 
 const _ = require('lodash');
 const { NotFoundError } = require('@strapi/utils').errors;
@@ -10,6 +15,7 @@ module.exports = ({ strapi }) => ({
       params.type = _.snakeCase(_.deburr(_.toLower(params.name)));
     }
 
+    /** @type {Role} */
     const role = await strapi.db
       .query('plugin::users-permissions.role')
       .create({ data: _.omit(params, ['users', 'permissions']) });
@@ -33,7 +39,7 @@ module.exports = ({ strapi }) => ({
 
             return acc;
           },
-          []
+          /** @type {Promise[]} */ ([])
         );
       });
     });
@@ -41,7 +47,11 @@ module.exports = ({ strapi }) => ({
     await Promise.all(createPromises);
   },
 
+  /**
+   * @param {Data.ID} roleID
+   */
   async findOne(roleID) {
+    /** @type {(Role & { permissions: Permission[] }) | null} */
     const role = await strapi.db
       .query('plugin::users-permissions.role')
       .findOne({ where: { id: roleID }, populate: ['permissions'] });
@@ -69,6 +79,7 @@ module.exports = ({ strapi }) => ({
   },
 
   async find() {
+    /** @type {Array<Role & { nb_users?: number }>} */
     const roles = await strapi.db
       .query('plugin::users-permissions.role')
       .findMany({ sort: ['name'] });
@@ -82,7 +93,12 @@ module.exports = ({ strapi }) => ({
     return roles;
   },
 
+  /**
+   * @param {Data.ID} roleID
+   * @param {object} data
+   */
   async updateRole(roleID, data) {
+    /** @type {(Role & { permissions: Permission[] }) | null} */
     const role = await strapi.db
       .query('plugin::users-permissions.role')
       .findOne({ where: { id: roleID }, populate: ['permissions'] });
@@ -111,7 +127,7 @@ module.exports = ({ strapi }) => ({
 
             return acc;
           },
-          []
+          /** @type {string[]} */ ([])
         );
       });
     });
@@ -123,7 +139,7 @@ module.exports = ({ strapi }) => ({
         acc.push(permission);
       }
       return acc;
-    }, []);
+    }, /** @type {Permission[]} */ ([]));
 
     const toCreate = newActions
       .filter((action) => !oldActions.includes(action))
@@ -144,7 +160,12 @@ module.exports = ({ strapi }) => ({
     );
   },
 
+  /**
+   * @param {Data.ID} roleID
+   * @param {Data.ID} publicRoleID
+   */
   async deleteRole(roleID, publicRoleID) {
+    /** @type {(Role & { users: User[], permissions: Permission[] }) | null} */
     const role = await strapi.db
       .query('plugin::users-permissions.role')
       .findOne({ where: { id: roleID }, populate: ['users', 'permissions'] });

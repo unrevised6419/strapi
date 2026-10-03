@@ -1,4 +1,8 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
 
 const { toPlainObject } = require('lodash/fp');
 
@@ -27,6 +31,9 @@ module.exports = ({ nexus, strapi }) => {
 
     description: 'Update an existing user',
 
+    /**
+     * @param {{ id: Data.ID, data: object }} args `id` is the entry id, not the documentId
+     */
     async resolve(parent, args, context) {
       const { koaContext } = context;
 

@@ -1,4 +1,9 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
+/** @import { Permission, Role, User } from '../types' */
 
 const _ = require('lodash');
 const { filter, map, pipe, prop } = require('lodash/fp');
@@ -109,6 +114,7 @@ module.exports = ({ strapi }) => ({
   },
 
   async getRoutes() {
+    /** @type {Record<string, unknown[]>} */
     const routesMap = {};
 
     for (const [apiName, api] of Object.entries(strapi.apis)) {
@@ -157,7 +163,9 @@ module.exports = ({ strapi }) => ({
   },
 
   async syncPermissions() {
+    /** @type {Role[]} */
     const roles = await strapi.db.query('plugin::users-permissions.role').findMany();
+    /** @type {Permission[]} */
     const dbPermissions = await strapi.db.query('plugin::users-permissions.permission').findMany();
 
     const permissionsFoundInDB = _.uniq(_.map(dbPermissions, 'action'));
@@ -236,6 +244,10 @@ module.exports = ({ strapi }) => ({
     return getService('users-permissions').syncPermissions();
   },
 
+  /**
+   * @param {Pick<User, 'id'>} user
+   * @param {Data.ID} role The entry `id` of the role
+   */
   async updateUserRole(user, role) {
     return strapi.db
       .query('plugin::users-permissions.user')
@@ -249,6 +261,7 @@ module.exports = ({ strapi }) => ({
     const interpolate = createStrictInterpolationRegExp(allowedTemplateVariables, 'g');
 
     try {
+      // @ts-expect-error `false` disables evaluate/escape, which lodash's types don't model
       return _.template(layout, { interpolate, evaluate: false, escape: false })(data);
     } catch {
       throw new errors.ApplicationError('Invalid email template');

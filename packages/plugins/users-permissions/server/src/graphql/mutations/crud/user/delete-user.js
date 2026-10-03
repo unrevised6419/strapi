@@ -1,4 +1,8 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
 
 const { checkBadRequest } = require('../../../utils');
 
@@ -21,6 +25,9 @@ module.exports = ({ nexus, strapi }) => {
 
     description: 'Delete an existing user',
 
+    /**
+     * @param {{ id: Data.ID }} args `id` is the entry id, not the documentId
+     */
     async resolve(parent, args, context) {
       const { koaContext } = context;
 

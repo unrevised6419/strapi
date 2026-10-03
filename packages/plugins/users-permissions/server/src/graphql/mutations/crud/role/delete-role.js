@@ -1,4 +1,8 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
 
 module.exports = ({ nexus, strapi }) => {
   const { nonNull } = nexus;
@@ -12,6 +16,9 @@ module.exports = ({ nexus, strapi }) => {
 
     description: 'Delete an existing role',
 
+    /**
+     * @param {{ id: Data.ID }} args `id` is the entry id, not the documentId
+     */
     async resolve(parent, args, context) {
       const { koaContext } = context;
 

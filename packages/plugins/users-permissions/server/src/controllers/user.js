@@ -1,4 +1,9 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
+/** @import { Role, User } from '../types' */
 
 /**
  * User.js controller
@@ -13,11 +18,16 @@ const { validateCreateUserBody, validateUpdateUserBody } = require('./validation
 
 const { ApplicationError, ValidationError, NotFoundError } = utils.errors;
 
-const sanitizeOutput = async (user, ctx) => {
+/**
+ * @template {User | null} TUser
+ * @param {TUser} user
+ * @return {Promise<TUser>} The user without its private fields
+ */
+const sanitizeOutput = (user, ctx) => {
   const schema = strapi.getModel('plugin::users-permissions.user');
   const { auth } = ctx.state;
 
-  return strapi.contentAPI.sanitize.output(user, schema, { auth });
+  return /** @type {Promise<TUser>} */ (strapi.contentAPI.sanitize.output(user, schema, { auth }));
 };
 
 const validateQuery = async (query, ctx) => {
@@ -37,17 +47,18 @@ const sanitizeQuery = async (query, ctx) => {
 module.exports = {
   /**
    * Create a/an user record.
-   * @return {Object}
+   * @return {Promise<void>}
    */
   async create(ctx) {
-    const advanced = await strapi
-      .store({ type: 'plugin', name: 'users-permissions', key: 'advanced' })
-      .get();
+    const advanced = /** @type {{ unique_email?: boolean, default_role?: string }} */ (
+      await strapi.store({ type: 'plugin', name: 'users-permissions', key: 'advanced' }).get()
+    );
 
     await validateCreateUserBody(ctx.request.body);
 
     const { email, username, role } = ctx.request.body;
 
+    /** @type {User | null} */
     const userWithSameUsername = await strapi.db
       .query('plugin::users-permissions.user')
       .findOne({ where: { username } });
@@ -57,6 +68,7 @@ module.exports = {
     }
 
     if (advanced.unique_email) {
+      /** @type {User | null} */
       const userWithSameEmail = await strapi.db
         .query('plugin::users-permissions.user')
         .findOne({ where: { email: email.toLowerCase() } });
@@ -73,9 +85,14 @@ module.exports = {
     };
 
     if (!role) {
+      /** @type {Role | null} */
       const defaultRole = await strapi.db
         .query('plugin::users-permissions.role')
         .findOne({ where: { type: advanced.default_role } });
+
+      if (!defaultRole) {
+        throw new ApplicationError('Impossible to find the default role');
+      }
 
       user.role = defaultRole.id;
     }
@@ -92,13 +109,14 @@ module.exports = {
 
   /**
    * Update a/an user record.
-   * @return {Object}
+   * @return {Promise<void>}
    */
   async update(ctx) {
-    const advancedConfigs = await strapi
-      .store({ type: 'plugin', name: 'users-permissions', key: 'advanced' })
-      .get();
+    const advancedConfigs = /** @type {{ unique_email?: boolean }} */ (
+      await strapi.store({ type: 'plugin', name: 'users-permissions', key: 'advanced' }).get()
+    );
 
+    /** @type {{ id: Data.ID }} */
     const { id } = ctx.params;
     const { email, username, password } = ctx.request.body;
 
@@ -114,6 +132,7 @@ module.exports = {
     }
 
     if (_.has(ctx.request.body, 'username')) {
+      /** @type {User | null} */
       const userWithSameUsername = await strapi.db
         .query('plugin::users-permissions.user')
         .findOne({ where: { username } });
@@ -124,6 +143,7 @@ module.exports = {
     }
 
     if (_.has(ctx.request.body, 'email') && advancedConfigs.unique_email) {
+      /** @type {User | null} */
       const userWithSameEmail = await strapi.db
         .query('plugin::users-permissions.user')
         .findOne({ where: { email: email.toLowerCase() } });
@@ -146,7 +166,7 @@ module.exports = {
 
   /**
    * Retrieve user records.
-   * @return {Object|Array}
+   * @return {Promise<void>}
    */
   async find(ctx) {
     await validateQuery(ctx.query, ctx);
@@ -158,9 +178,10 @@ module.exports = {
 
   /**
    * Retrieve a user record.
-   * @return {Object}
+   * @return {Promise<void>}
    */
   async findOne(ctx) {
+    /** @type {{ id: Data.ID }} */
     const { id } = ctx.params;
     await validateQuery(ctx.query, ctx);
     const sanitizedQuery = await sanitizeQuery(ctx.query, ctx);
@@ -176,7 +197,7 @@ module.exports = {
 
   /**
    * Retrieve user count.
-   * @return {Number}
+   * @return {Promise<void>}
    */
   async count(ctx) {
     await validateQuery(ctx.query, ctx);
@@ -187,9 +208,10 @@ module.exports = {
 
   /**
    * Destroy a/an user record.
-   * @return {Object}
+   * @return {Promise<void>}
    */
   async destroy(ctx) {
+    /** @type {{ id: Data.ID }} */
     const { id } = ctx.params;
 
     const data = await getService('user').remove({ id });
@@ -200,9 +222,10 @@ module.exports = {
 
   /**
    * Retrieve authenticated user.
-   * @return {Object|Array}
+   * @return {Promise<void>}
    */
   async me(ctx) {
+    /** @type {User | undefined} */
     const authUser = ctx.state.user;
     const { query } = ctx;
 

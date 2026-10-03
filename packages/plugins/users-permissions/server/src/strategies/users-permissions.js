@@ -1,4 +1,8 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Data } from '@strapi/strapi' */
 
 const { castArray, map, every, pipe } = require('lodash/fp');
 const { ForbiddenError, UnauthorizedError } = require('@strapi/utils').errors;
@@ -6,7 +10,9 @@ const { ForbiddenError, UnauthorizedError } = require('@strapi/utils').errors;
 const { getService } = require('../utils');
 
 const getAdvancedSettings = () => {
-  return strapi.store({ type: 'plugin', name: 'users-permissions' }).get({ key: 'advanced' });
+  return /** @type {Promise<{ email_confirmation?: boolean }>} */ (
+    strapi.store({ type: 'plugin', name: 'users-permissions' }).get({ key: 'advanced' })
+  );
 };
 
 const authenticate = async (ctx) => {
@@ -14,6 +20,7 @@ const authenticate = async (ctx) => {
     const token = await getService('jwt').getToken(ctx);
 
     if (token) {
+      /** @type {{ id?: Data.ID, sessionId?: string }} */
       const { id, sessionId } = token;
 
       // Invalid token

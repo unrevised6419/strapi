@@ -1,4 +1,8 @@
+// @ts-check
+
 'use strict';
+
+/** @import { Role, User } from '../types' */
 
 /**
  * Auth.js controller
@@ -26,12 +30,25 @@ const {
 const { ApplicationError, ValidationError, ForbiddenError } = utils.errors;
 const { buildSessionMetadata, sanitizeSessionEntry, sortSessionsForDisplay } = utils;
 
+/**
+ * @param {User} user
+ * @return {Promise<User>} The user without its private fields
+ */
 const sanitizeUser = (user, ctx) => {
   const { auth } = ctx.state;
   const userSchema = strapi.getModel('plugin::users-permissions.user');
 
-  return strapi.contentAPI.sanitize.output(user, userSchema, { auth });
+  return /** @type {Promise<User>} */ (
+    strapi.contentAPI.sanitize.output(user, userSchema, { auth })
+  );
 };
+
+/**
+ * The user authenticated by the users-permissions strategy.
+ *
+ * @return {User | undefined}
+ */
+const getAuthUser = (ctx) => ctx.state.user;
 
 const extractDeviceId = (requestBody) => {
   const { deviceId } = requestBody || {};
@@ -44,6 +61,7 @@ const buildSessionMetadataFromContext = (ctx) =>
     userAgent: ctx.request.headers['user-agent'],
   });
 
+/** @type {(strapi: any, ctx: any, user: User, options?: { metadata?: object }) => Promise<void>} */
 const sendRefreshAuthResponse = async (strapi, ctx, user, { metadata } = {}) => {
   const deviceId = extractDeviceId(ctx.request.body);
   const tokenOptions = { type: 'refresh', ...(metadata ? { metadata } : {}) };
@@ -76,6 +94,9 @@ const sendRefreshAuthResponse = async (strapi, ctx, user, { metadata } = {}) => 
   });
 };
 
+/**
+ * @param {User} user
+ */
 const reissueTokensAfterPasswordChange = async (strapi, ctx, user) => {
   const deviceId = extractDeviceId(ctx.request.body);
 
@@ -100,6 +121,9 @@ const reissueTokensAfterPasswordChange = async (strapi, ctx, user) => {
   });
 };
 
+/**
+ * @param {string} userId The entry `id` of the user, stringified for the session manager
+ */
 const revokeLogoutSessions = async (strapi, ctx, userId, { scope, deviceId, body }) => {
   const sessionManager = strapi.sessionManager('users-permissions');
   const upSessions = strapi.config.get('plugin::users-permissions.sessions');
@@ -155,6 +179,7 @@ module.exports = ({ strapi }) => ({
       const { identifier } = params;
 
       // Check if the user exists.
+      /** @type {User | null} */
       const user = await strapi.db.query('plugin::users-permissions.user').findOne({
         where: {
           provider,
@@ -236,7 +261,8 @@ module.exports = ({ strapi }) => ({
   },
 
   async changePassword(ctx) {
-    if (!ctx.state.user) {
+    const authUser = getAuthUser(ctx);
+    if (!authUser) {
       throw new ApplicationError('You must be authenticated to reset your password');
     }
 
@@ -247,9 +273,14 @@ module.exports = ({ strapi }) => ({
       validations
     );
 
+    /** @type {User | null} */
     const user = await strapi.db
       .query('plugin::users-permissions.user')
-      .findOne({ where: { id: ctx.state.user.id } });
+      .findOne({ where: { id: authUser.id } });
+
+    if (!user) {
+      throw new ApplicationError('You must be authenticated to reset your password');
+    }
 
     const validPassword = await getService('user').validatePassword(currentPassword, user.password);
 
@@ -286,6 +317,7 @@ module.exports = ({ strapi }) => ({
       throw new ValidationError('Passwords do not match');
     }
 
+    /** @type {User | null} */
     const user = await strapi.db
       .query('plugin::users-permissions.user')
       .findOne({ where: { resetPasswordToken: code } });
@@ -360,11 +392,12 @@ module.exports = ({ strapi }) => ({
       return ctx.notFound();
     }
 
-    if (!ctx.state.user) {
+    const authUser = getAuthUser(ctx);
+    if (!authUser) {
       return ctx.unauthorized('Missing authentication');
     }
 
-    const userId = String(ctx.state.user.id);
+    const userId = String(authUser.id);
     const upSessions = strapi.config.get('plugin::users-permissions.sessions');
     const body = ctx.request.body || {};
     const scope = typeof body.scope === 'string' ? body.scope : undefined;
@@ -396,14 +429,15 @@ module.exports = ({ strapi }) => ({
       return ctx.notFound();
     }
 
-    if (!ctx.state.user) {
+    const authUser = getAuthUser(ctx);
+    if (!authUser) {
       return ctx.unauthorized('Missing authentication');
     }
 
     const currentSessionId = ctx.state.session?.id;
     const sessions = await strapi
       .sessionManager('users-permissions')
-      .listSessions(String(ctx.state.user.id));
+      .listSessions(String(authUser.id));
 
     const data = sortSessionsForDisplay(
       sessions.map((session) => sanitizeSessionEntry(session, currentSessionId))
@@ -417,14 +451,15 @@ module.exports = ({ strapi }) => ({
       return ctx.notFound();
     }
 
-    if (!ctx.state.user) {
+    const authUser = getAuthUser(ctx);
+    if (!authUser) {
       return ctx.unauthorized('Missing authentication');
     }
 
     const { sessionId } = ctx.params;
     const revoked = await strapi
       .sessionManager('users-permissions')
-      .revokeSessionById(String(ctx.state.user.id), sessionId);
+      .revokeSessionById(String(authUser.id), sessionId);
 
     if (!revoked) {
       return ctx.notFound('Session not found');
@@ -490,6 +525,7 @@ module.exports = ({ strapi }) => ({
     const advancedSettings = await pluginStore.get({ key: 'advanced' });
 
     // Find the user by email.
+    /** @type {User | null} */
     const user = await strapi.db
       .query('plugin::users-permissions.user')
       .findOne({ where: { email: email.toLowerCase() } });
@@ -568,6 +604,7 @@ module.exports = ({ strapi }) => ({
       throw new ValidationError(`Invalid parameters: ${invalidKeys.join(', ')}`);
     }
 
+    /** @type {Record<string, any>} */
     const params = {
       ..._.pick(ctx.request.body, allowedKeys),
       provider: 'local',
@@ -577,6 +614,7 @@ module.exports = ({ strapi }) => ({
 
     await validateRegisterBody(params, validations);
 
+    /** @type {Role | null} */
     const role = await strapi.db
       .query('plugin::users-permissions.role')
       .findOne({ where: { type: settings.default_role } });
@@ -693,6 +731,7 @@ module.exports = ({ strapi }) => ({
   async sendEmailConfirmation(ctx) {
     const { email } = await validateSendEmailConfirmationBody(ctx.request.body);
 
+    /** @type {User | null} */
     const user = await strapi.db.query('plugin::users-permissions.user').findOne({
       where: { email: email.toLowerCase() },
     });
