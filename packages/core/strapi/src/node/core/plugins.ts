@@ -1,6 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import camelCase from 'lodash/camelCase';
 import { env } from '@strapi/utils';
 import { getModule, PackageJson } from './dependencies';
@@ -96,14 +97,25 @@ const getEnabledPlugins = async ({
    * are plugins.
    */
   const deps = strapi.config.get('info.dependencies', {});
+  const devDeps = strapi.config.get('info.devDependencies', {});
 
   logger.debug("Dependencies from user's project", os.EOL, deps);
+  logger.debug("Dev dependencies from user's project", os.EOL, devDeps);
 
   const userPluginsFile = await loadUserPluginsFile(strapi.dirs.app.config);
 
   logger.debug("User's plugins file", os.EOL, userPluginsFile);
 
-  for (const dep of Object.keys(deps)) {
+  /**
+   * The admin slice is bundled at build time, so a plugin that only ships one can live in
+   * `devDependencies`. Those come first, so a `dependencies` package that ships the same slice
+   * wins. A package listed in both is read once, as a dependency
+   */
+  const installedPackages = new Set([...Object.keys(devDeps), ...Object.keys(deps)]);
+
+  const requireFromApp = createRequire(path.join(cwd, 'package.json'));
+
+  for (const dep of installedPackages) {
     const pkg = await getModule(dep, cwd);
 
     if (pkg && validatePackageIsPlugin(pkg)) {
@@ -122,6 +134,23 @@ const getEnabledPlugins = async ({
 
       if (userPluginConfig !== undefined && !isPluginConfigEnabled(userPluginConfig)) {
         continue;
+      }
+
+      /**
+       * Two packages can share a plugin name and each ship one slice, e.g. the admin slice in a
+       * dev dependency and the server slice in a dependency. A later package replaces an earlier
+       * one only when it ships the admin slice, so a server-only package keeps the admin slice
+       */
+      const previous = plugins[name];
+
+      if (previous && !hasModuleAdminEntry(requireFromApp, dep)) {
+        continue;
+      }
+
+      if (previous && hasModuleAdminEntry(requireFromApp, previous.modulePath)) {
+        logger.warn(
+          `The plugin "${name}" has an admin slice in both "${previous.modulePath}" and "${dep}". Strapi bundles the one from "${dep}". Remove the other package, or give it a different plugin name.`
+        );
       }
 
       plugins[name] = {
@@ -162,6 +191,22 @@ const getEnabledPlugins = async ({
   }
 
   return plugins;
+};
+
+const hasModuleAdminEntry = (requireFromApp: NodeJS.Require, dep: string): boolean => {
+  try {
+    requireFromApp.resolve(`${dep}/strapi-admin`);
+    return true;
+  } catch (err) {
+    // Not `isError`: a resolution error can come from another realm, e.g. under a test runner
+    const code = typeof err === 'object' && err !== null && 'code' in err ? err.code : undefined;
+
+    if (code === 'MODULE_NOT_FOUND' || code === 'ERR_PACKAGE_PATH_NOT_EXPORTED') {
+      return false;
+    }
+
+    throw err;
+  }
 };
 
 const PLUGIN_CONFIGS = ['plugins.js', 'plugins.mjs', 'plugins.ts'];

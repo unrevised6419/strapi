@@ -1,7 +1,6 @@
 import { join } from 'path';
 import fse from 'fs-extra';
 import { defaultsDeep, defaults, getOr, get } from 'lodash/fp';
-import * as resolve from 'resolve.exports';
 
 import { env } from '@strapi/utils';
 import type { Core, Plugin, Struct } from '@strapi/types';
@@ -9,6 +8,7 @@ import { loadConfigFile } from '../../utils/load-config-file';
 import { loadFiles } from '../../utils/load-files';
 import { getEnabledPlugins } from './get-enabled-plugins';
 import { getUserPluginsConfig } from './get-user-plugins-config';
+import { resolveServerExport } from './server-entrypoint';
 import { getGlobalId } from '../../domain/content-type';
 
 interface Plugins {
@@ -106,17 +106,7 @@ export default async function loadPlugins(strapi: Core.Strapi) {
     const enabledPlugin = enabledPlugins[pluginName];
 
     let serverEntrypointPath;
-    let resolvedExport = './strapi-server.js';
-
-    try {
-      resolvedExport = (
-        resolve.exports(enabledPlugin.packageInfo, 'strapi-server', {
-          require: true,
-        }) ?? './strapi-server.js'
-      ).toString();
-    } catch {
-      // no export map or missing strapi-server export => fallback to default
-    }
+    const resolvedExport = resolveServerExport(enabledPlugin.packageInfo);
 
     try {
       serverEntrypointPath = join(enabledPlugin.pathToPlugin, resolvedExport);
@@ -129,6 +119,12 @@ export default async function loadPlugins(strapi: Core.Strapi) {
     // only load plugins with a server entrypoint
     if (!(await fse.pathExists(serverEntrypointPath))) {
       continue;
+    }
+
+    if (enabledPlugin.isDevDependency) {
+      strapi.log.warn(
+        `The plugin "${pluginName}" loads its server code from "${enabledPlugin.info.packageName}", which is in devDependencies. Production installs skip devDependencies, so the server would start without this plugin. Move "${enabledPlugin.info.packageName}" to dependencies.`
+      );
     }
 
     const pluginServer = loadConfigFile(serverEntrypointPath);
