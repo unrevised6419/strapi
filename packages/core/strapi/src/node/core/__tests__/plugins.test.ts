@@ -1,3 +1,7 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
 import { getEnabledPlugins } from '../plugins';
 import * as files from '../files';
 import * as dependencies from '../dependencies';
@@ -34,12 +38,16 @@ const installedPluginPackage = (name: string) => ({
 interface ContextOptions {
   pluginsConfig?: Record<string, unknown>;
   dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  cwd?: string;
   installedPackages?: Record<string, unknown>;
 }
 
 const buildContext = ({
   pluginsConfig = {},
   dependencies: deps = {},
+  devDependencies: devDeps = {},
+  cwd = '/app',
   installedPackages = {},
 }: ContextOptions = {}) => {
   mockedLoadFile.mockReset();
@@ -54,7 +62,7 @@ const buildContext = ({
   );
 
   return {
-    cwd: '/app',
+    cwd,
     runtimeDir: '/app/.strapi/client',
     logger: {
       debug: jest.fn(),
@@ -64,7 +72,11 @@ const buildContext = ({
     } as any,
     strapi: {
       config: {
-        get: jest.fn((key: string, def: unknown) => (key === 'info.dependencies' ? deps : def)),
+        get: jest.fn((key: string, def: unknown) => {
+          if (key === 'info.dependencies') return deps;
+          if (key === 'info.devDependencies') return devDeps;
+          return def;
+        }),
       },
       dirs: { app: { config: '/app/config' } },
     } as any,
@@ -134,6 +146,91 @@ describe('admin build getEnabledPlugins', () => {
       });
       const plugins = await getEnabledPlugins(ctx);
       expect(Object.keys(plugins)).toContain('foo');
+    });
+  });
+
+  describe('devDependencies', () => {
+    let appDir: string;
+
+    // Writes a package to the app's node_modules, with a `strapi-admin` export when it has one
+    const writePackage = (name: string, { admin }: { admin: boolean }) => {
+      const dir = path.join(appDir, 'node_modules', name);
+      fs.mkdirSync(dir, { recursive: true });
+
+      const exports: Record<string, string> = { './package.json': './package.json' };
+
+      if (admin) {
+        exports['./strapi-admin'] = './strapi-admin.js';
+        fs.writeFileSync(path.join(dir, 'strapi-admin.js'), 'module.exports = {};');
+      }
+
+      fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name, exports }));
+    };
+
+    const splitPlugin = {
+      'foo-admin': { name: 'foo-admin', strapi: { kind: 'plugin', name: 'foo' } },
+      'foo-server': { name: 'foo-server', strapi: { kind: 'plugin', name: 'foo' } },
+    };
+
+    beforeEach(() => {
+      appDir = fs.mkdtempSync(path.join(os.tmpdir(), 'strapi-admin-plugins-'));
+      writePackage('foo-admin', { admin: true });
+      writePackage('foo-server', { admin: false });
+    });
+
+    afterEach(() => {
+      fs.rmSync(appDir, { recursive: true, force: true });
+    });
+
+    it('includes a plugin listed in devDependencies', async () => {
+      const ctx = buildContext({
+        devDependencies: { 'my-plugin': '1.0.0' },
+        installedPackages: { 'my-plugin': installedPluginPackage('my-plugin') },
+      });
+      const plugins = await getEnabledPlugins(ctx);
+      expect(plugins['my-plugin']).toMatchObject({ modulePath: 'my-plugin' });
+    });
+
+    it('keeps the admin slice when a server-only dependency shares the plugin name', async () => {
+      const ctx = buildContext({
+        cwd: appDir,
+        dependencies: { 'foo-server': '1.0.0' },
+        devDependencies: { 'foo-admin': '1.0.0' },
+        installedPackages: splitPlugin,
+      });
+      const plugins = await getEnabledPlugins(ctx);
+      expect(plugins.foo).toMatchObject({ modulePath: 'foo-admin' });
+      expect(ctx.logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('keeps the admin slice whatever order the packages are listed in', async () => {
+      const ctx = buildContext({
+        cwd: appDir,
+        dependencies: { 'foo-admin': '1.0.0', 'foo-server': '1.0.0' },
+        installedPackages: splitPlugin,
+      });
+      const plugins = await getEnabledPlugins(ctx);
+      expect(plugins.foo).toMatchObject({ modulePath: 'foo-admin' });
+    });
+
+    it('prefers the dependency when both packages ship the admin slice', async () => {
+      writePackage('foo-dev', { admin: true });
+
+      const ctx = buildContext({
+        cwd: appDir,
+        dependencies: { 'foo-admin': '1.0.0' },
+        devDependencies: { 'foo-dev': '1.0.0' },
+        installedPackages: {
+          ...splitPlugin,
+          'foo-dev': { name: 'foo-dev', strapi: { kind: 'plugin', name: 'foo' } },
+        },
+      });
+      const plugins = await getEnabledPlugins(ctx);
+      expect(plugins.foo).toMatchObject({ modulePath: 'foo-admin' });
+      expect(ctx.logger.warn).toHaveBeenCalledTimes(1);
+      expect(ctx.logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('admin slice in both "foo-dev" and "foo-admin"')
+      );
     });
   });
 });

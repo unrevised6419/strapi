@@ -5,12 +5,17 @@ import { get, pickBy, defaultsDeep, map, prop, pipe } from 'lodash/fp';
 import { strings } from '@strapi/utils';
 import type { Core } from '@strapi/types';
 import { getUserPluginsConfig, PluginDeclaration } from './get-user-plugins-config';
+import { hasServerEntrypoint } from './server-entrypoint';
 
 interface PluginMeta {
   enabled: boolean;
   pathToPlugin?: string;
   info: Record<string, unknown>;
   packageInfo?: Record<string, unknown>;
+  /**
+   * The plugin comes from the app's `devDependencies`, which production installs skip
+   */
+  isDevDependency?: boolean;
 }
 
 type PluginMetas = Record<string, PluginMeta>;
@@ -102,11 +107,26 @@ export const getEnabledPlugins = async (strapi: Core.Strapi, { client } = { clie
 
   const installedPlugins: PluginMetas = {};
   const dependencies = strapi.config.get('info.dependencies', {});
+  const devDependencies = strapi.config.get('info.devDependencies', {});
 
-  for (const dep of Object.keys(dependencies)) {
-    const packagePath = join(dep, 'package.json');
+  /**
+   * `devDependencies` come first, so a `dependencies` package that ships the same slice wins.
+   * A package listed in both is read once, as a dependency
+   */
+  const installedPackages = new Set([
+    ...Object.keys(devDependencies),
+    ...Object.keys(dependencies),
+  ]);
+
+  for (const dep of installedPackages) {
+    const isDevDependency = !(dep in dependencies);
+    let packagePath;
     let packageInfo;
     try {
+      // Resolve from the app first, where the app's dependencies are installed
+      packagePath = require.resolve(join(dep, 'package.json'), {
+        paths: [strapi.dirs.app.root, __dirname],
+      });
       packageInfo = require(packagePath);
     } catch {
       continue;
@@ -114,14 +134,35 @@ export const getEnabledPlugins = async (strapi: Core.Strapi, { client } = { clie
 
     if (isStrapiPlugin(packageInfo)) {
       validatePluginName(packageInfo.strapi.name);
-      installedPlugins[packageInfo.strapi.name] = {
+
+      const plugin: PluginMeta = {
         ...toDetailedDeclaration({ enabled: true, resolve: packagePath, isModule: client }),
         info: {
           ...packageInfo.strapi,
           packageName: packageInfo.name,
         },
         packageInfo,
+        isDevDependency,
       };
+
+      /**
+       * Two packages can share a plugin name and each ship one slice, e.g. the admin slice in a
+       * dev dependency and the server slice in a dependency. A later package replaces an earlier
+       * one only when it ships the server slice, so an admin-only package keeps the server slice
+       */
+      const previous = installedPlugins[packageInfo.strapi.name];
+
+      if (previous && !hasServerEntrypoint(plugin)) {
+        continue;
+      }
+
+      if (previous && hasServerEntrypoint(previous)) {
+        strapi.log.warn(
+          `The plugin "${packageInfo.strapi.name}" has a server slice in both "${previous.info.packageName}" and "${packageInfo.name}". Strapi loads the one from "${packageInfo.name}". Remove the other package, or give it a different plugin name.`
+        );
+      }
+
+      installedPlugins[packageInfo.strapi.name] = plugin;
     }
   }
 
