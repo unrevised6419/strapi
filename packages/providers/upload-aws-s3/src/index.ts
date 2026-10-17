@@ -1,4 +1,3 @@
-import type { ReadStream } from 'node:fs';
 import { get } from 'lodash';
 import {
   S3Client,
@@ -18,6 +17,7 @@ import {
 import type { AwsCredentialIdentity, AwsCredentialIdentityProvider } from '@aws-sdk/types';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Upload } from '@aws-sdk/lib-storage';
+import type { Providers } from '@strapi/types';
 import { extractCredentials, isUrlFromBucket } from './utils';
 
 /**
@@ -61,25 +61,7 @@ export interface MultipartConfig {
   leavePartsOnError?: boolean;
 }
 
-export interface File {
-  name: string;
-  alternativeText?: string;
-  caption?: string;
-  width?: number;
-  height?: number;
-  formats?: Record<string, unknown>;
-  hash: string;
-  ext?: string;
-  mime: string;
-  size: number;
-  sizeInBytes: number;
-  url: string;
-  previewUrl?: string;
-  path?: string;
-  provider?: string;
-  provider_metadata?: Record<string, unknown>;
-  stream?: ReadStream;
-  buffer?: Buffer;
+export interface File extends Providers.Upload.UploadFile {
   etag?: string;
 }
 
@@ -165,7 +147,7 @@ const assertUrlProtocol = (url: string) => {
  * Sanitizes a path component to prevent path traversal attacks.
  * Removes directory traversal sequences and normalizes the path.
  */
-const sanitizePathComponent = (component: string | undefined): string => {
+const sanitizePathComponent = (component: string | null | undefined): string => {
   if (!component) return '';
   return component
     .replace(/\.\./g, '')
@@ -575,8 +557,8 @@ export default {
       /**
        * Generates a signed URL for accessing a private object.
        */
-      async getSignedUrl(file: File, customParams: any): Promise<{ url: string }> {
-        if (!isUrlFromBucket(file.url, config.params.Bucket, baseUrl)) {
+      async getSignedUrl(file: File, customParams: any): Promise<{ url?: string }> {
+        if (!file.url || !isUrlFromBucket(file.url, config.params.Bucket, baseUrl)) {
           return { url: file.url };
         }
         const fileKey = getFileKey(file);
@@ -692,4 +674,4 @@ export default {
       },
     };
   },
-};
+} satisfies Providers.Upload.Factory<InitOptions>;
